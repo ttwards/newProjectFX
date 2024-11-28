@@ -20,6 +20,7 @@ public enum GamePiece {
         this.image = new Image(getClass().getResourceAsStream("/images/" + imageName));
     }
 
+
     public ImageView getImageView() {
         ImageView imageView = new ImageView(image);
         imageView.setFitWidth(CELL_SIZE);

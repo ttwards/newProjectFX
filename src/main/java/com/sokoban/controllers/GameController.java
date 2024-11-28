@@ -10,7 +10,7 @@ public class GameController {
     @FXML private GridPane gameBoard;
     private int playerX = 0;
     private int playerY = 0;
-    private int[][] level;
+    private GamePiece[][] level;
 
     @FXML
     public void initialize() {
@@ -45,12 +45,8 @@ public class GameController {
 
     private void loadLevel(int num) {
         // 加载关卡数据
-        level = new int[][] {
-                {1, 1, 1, 1, 1},
-                {1, 0, 0, 0, 1},
-                {1, 0, 2, 0, 1},
-                {1, 0, 0, 0, 1},
-                {1, 1, 1, 1, 1}
+        level = new GamePiece[][] {
+                {1,1}
         };
     }
 
@@ -64,7 +60,9 @@ public class GameController {
             updateGameBoard();
         }
     }
+    private void pushbox(int dx, int dy){
 
+    }
     private boolean isValidMove(int x, int y) {
         return x >= 0 && x < level[0].length && y >= 0 && y < level.length && level[y][x] != 1;
     }
