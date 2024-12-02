@@ -10,7 +10,7 @@ public class Wall {
     public Wall(double x, double y) {
         this.x = x;
         this.y = y;
-        Image image = new Image(getClass().getResourceAsStream("/images/white.png"));
+        Image image = new Image(getClass().getResourceAsStream("/images/fire.png"));
         this.imageView = new ImageView(image);
         this.imageView.setFitWidth(50);
         this.imageView.setFitHeight(50);

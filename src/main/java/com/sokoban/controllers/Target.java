@@ -28,7 +28,8 @@ public class Target {
     public void relocate(double x, double y) {
         this.x = x;
         this.y = y;
-        this.imageView.relocate(x, y);
+        this.imageView.setLayoutX(x);
+        this.imageView.setLayoutY(y);
     }
     public ImageView getImageView() {
         return imageView;

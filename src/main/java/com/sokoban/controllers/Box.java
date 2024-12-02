@@ -20,7 +20,8 @@ public class Box {
     public void relocate(double x, double y) {
         this.x = x;
         this.y = y;
-        this.imageView.relocate(x, y);
+        this.imageView.setLayoutX(x);
+        this.imageView.setLayoutY(y);
     }
 
     public double getX() {
