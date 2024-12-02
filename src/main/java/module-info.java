@@ -6,6 +6,7 @@ module com.sokoban {
 
     // 允许javafx.fxml访问我们的控制器类
     opens com.sokoban.controllers to javafx.fxml;
+    exports com.sokoban.controllers to javafx.graphics;
 
     // 导出包，允许其他模块访问
     exports com.sokoban;

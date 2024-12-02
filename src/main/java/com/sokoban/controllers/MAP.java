@@ -1,17 +1,17 @@
 package com.sokoban.controllers;
 
 public class MAP {
-    private Cell[][] map;
+        //0表示空地，1表示墙，2表示玩家，3表示箱子，4表示目标
     private int width;
     private int height;
-    private final int[][] level1={
+    private  int[][] level1={
             {1,1,1,1,1,1},
             {1,2,0,0,0,1},
             {1,0,0,3,4,1},
             {1,0,4,3,0,1},
             {1,1,1,1,1,1}
     };
-    private final int[][] level2={
+    private int[][] level2={
             {1,1,1,1,1,1,0},
             {1,2,0,0,0,1,1},
             {1,0,3,3,0,0,1},
@@ -19,7 +19,7 @@ public class MAP {
             {1,0,0,0,0,0,1},
             {1,1,1,1,1,1,1}
     };
-    private final int[][] level3={
+    private  int[][] level3={
             {0,0,1,1,1,1,0},
             {1,1,1,0,0,1,0},
             {1,2,0,4,3,1,1},
@@ -28,7 +28,7 @@ public class MAP {
             {1,0,0,0,0,0,1},
             {1,1,1,1,1,1,1}
     };
-    private final int[][] level4={
+    private int[][] level4={
             {0,1,1,1,1,1,0},
             {1,1,2,0,0,1,1},
             {1,0,0,1,0,0,1},
@@ -37,7 +37,7 @@ public class MAP {
             {1,1,0,4,0,1,1},
             {0,1,1,1,1,1,0}
     };
-    private final int[][] level5={
+    private  int[][] level5={
             {1,1,1,1,1,1,0,0},
             {1,0,0,0,0,1,1,1},
             {1,0,0,0,4,4,0,1},
