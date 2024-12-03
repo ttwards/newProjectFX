@@ -10,22 +10,22 @@ import java.io.InputStream;
 public class Player {
     private ImageView imageView;
     private double x, y;
+    private Level level;
 
-    public Player(double x, double y) {
+
+    public Player(double x, double y,Level level) {
         this.x = x;
         this.y = y;
+        this.level = level;
         setImage("/images/down.png"); // 初始方向向下
         this.imageView.setFitWidth(50);
         this.imageView.setFitHeight(50);
         this.imageView.relocate(x, y);
     }
 
-    public void relocate(double x, double y) {
-        this.x = x;
-        this.y = y;
-        this.imageView.setLayoutX(x);
-        this.imageView.setLayoutY(y);
-    }
+
+
+
 
     public double getX() {
         return x;
@@ -67,5 +67,15 @@ public class Player {
     public void moveRight() {
         setImage("/images/right.png");
         relocate(x + 50, y);
+    }
+    private void relocate(double newX, double newY) {
+        // 这里可以添加碰撞检测逻辑
+        if (level.isMoveValid(newX, newY)) {
+            this.x = newX;
+            this.y = newY;
+            this.imageView.relocate(x, y);
+        } else {
+            System.out.println("Invalid move: (" + newX + ", " + newY + ")");
+        }
     }
 }

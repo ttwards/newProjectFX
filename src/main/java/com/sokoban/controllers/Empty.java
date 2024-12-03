@@ -1,24 +1,25 @@
 package com.sokoban.controllers;
 
+
+
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import java.io.InputStream;
 
-public class Box {
+public class Empty{
     private ImageView imageView;
     private double x, y;
 
-    public Box(double x, double y) {
+    public Empty(double x, double y) {
         this.x = x;
         this.y = y;
-        Image image = new Image(getClass().getResourceAsStream("/images/yellow.png"));
+        Image image = new Image(getClass().getResourceAsStream("/images/blue.png"));
         this.imageView = new ImageView(image);
         this.imageView.setFitWidth(50);
         this.imageView.setFitHeight(50);
         this.imageView.relocate(x, y);
     }
-
     private void setImage(String imagePath) {
         System.out.println("Loading image from path: " + imagePath);
         InputStream inputStream = getClass().getResourceAsStream(imagePath);
@@ -28,12 +29,10 @@ public class Box {
         Image image = new Image(inputStream);
         this.imageView = new ImageView(image);
     }
-    public void relocate(double x, double y) {
-        this.x = x;
-        this.y = y;
-        this.imageView.setLayoutX(x);
-        this.imageView.setLayoutY(y);
-    }
+
+
+
+
 
     public double getX() {
         return x;

@@ -5,130 +5,86 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class SokobanGame extends Application {
 
-    private Pane gamePane;
+
     private Player player;
     private Box box;
     private Target target;
 
+    private Level level;
+    private Pane gamePane;
+
     @Override
     public void start(Stage primaryStage) {
-        // 初始化游戏界面
+        // 创建主布局
+        BorderPane root = new BorderPane();
+        Scene scene = new Scene(root, 800, 600);
+
+        // 创建游戏区域
         gamePane = new Pane();
-        gamePane.setPrefSize(400, 400);
-        gamePane.setFocusTraversable(true);// 设置根节点可聚焦
+        root.setCenter(gamePane);
 
-        // 创建玩家、箱子和目标
-        player = new Player(100, 100);
-        box = new Box(200, 200);
-        target = new Target(300, 300);
+        // 创建关卡选择按钮容器
+        HBox buttonContainer = new HBox(10); // 水平间距为10
+        buttonContainer.setPadding(new Insets(10));
 
-        // 添加到游戏界面
-        gamePane.getChildren().addAll(player.getImageView(), box.getImageView(), target.getImageView());
+        // 创建并配置五个按钮
+        for (int i = 0; i < 5; i++) {
+            final int levelIndex = i + 1; // 关卡索引从1开始
+            Button button = new Button("Level " + levelIndex);
+            button.setOnAction(event -> loadLevel(levelIndex - 1)); // 索引从0开始
+            buttonContainer.getChildren().add(button);
+        }
 
-        // 创建重置按钮
-        Button resetButton = new Button("Reset Level");
-        resetButton.setOnAction(event -> resetLevel());
+        // 将按钮容器添加到顶部
+        root.setTop(buttonContainer);
 
-        // 创建场景
-        Scene scene = new Scene(new Pane(gamePane, resetButton), 400, 450);
-        scene.setOnKeyPressed(event -> handleKeyPress(event.getCode()));
-        gamePane.requestFocus();
+        // 初始化关卡管理器
+        level = new Level(gamePane);
+        loadLevel(0); // 默认加载第一关
+
+        scene.setOnKeyPressed(event -> {
+            KeyCode keyCode = event.getCode();
+            switch (keyCode) {
+                case W:
+                    level.getPlayer().moveUp();
+                    break;
+                case S:
+                    level.getPlayer().moveDown();
+                    break;
+                case A:
+                    level.getPlayer().moveLeft();
+                    break;
+                case D:
+                   level.getPlayer().moveRight();
+                    break;
+                default:
+                    break;
+            }
+        });
 
         primaryStage.setTitle("Sokoban Game");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    private void handleKeyPress(KeyCode keyCode) {
-        switch (keyCode) {
-            case UP:
-                movePlayer(0, -50, "up");
-                break;
-            case DOWN:
-                movePlayer(0, 50, "down");
-                break;
-            case LEFT:
-                movePlayer(-50, 0, "left");
-                break;
-            case RIGHT:
-                movePlayer(50, 0, "right");
-                break;
-        }
+    private void loadLevel(int levelIndex) {
+        level.loadLevel(levelIndex);
     }
 
-    private void movePlayer(int dx, int dy, String direction) {
-        double newX = player.getX() + dx;
-        double newY = player.getY() + dy;
 
-        // 检查边界
-        if (newX < 0 || newY < 0 || newX >= 350 || newY >= 350) {
-            return; // 超出边界，不允许移动
-        }
-
-        // 检查是否碰到箱子
-        if (newX == box.getX() && newY == box.getY()) {
-            double boxNewX = box.getX() + dx;
-            double boxNewY = box.getY() + dy;
-
-            // 检查箱子移动后是否会超出边界
-            if (boxNewX < 0 || boxNewY < 0 || boxNewX >= 350 || boxNewY >= 350) {
-                return; // 箱子超出边界，不允许移动
-            }
-
-            // 移动箱子
-            animateMove(box, boxNewX, boxNewY, 200);
-            box.relocate(boxNewX, boxNewY);
-        }
-
-        // 根据方向切换图片并移动玩家
-        switch (direction) {
-            case "up":
-                player.moveUp();
-                break;
-            case "down":
-                player.moveDown();
-                break;
-            case "left":
-                player.moveLeft();
-                break;
-            case "right":
-                player.moveRight();
-                break;
-        }
-    }
-
-    private void animateMove(Object obj, double targetX, double targetY, int duration) {
-        Timeline timeline = new Timeline(
-                new KeyFrame(Duration.millis(duration),
-                        event -> {
-                            if (obj instanceof Player) {
-                                ((Player) obj).relocate(targetX, targetY);
-                            } else if (obj instanceof Box) {
-                                ((Box) obj).relocate(targetX, targetY);
-                            }
-                        },
-                        new KeyValue(((ImageView) ((obj instanceof Player) ? ((Player) obj).getImageView() : ((Box) obj).getImageView())).layoutXProperty(), targetX, Interpolator.LINEAR),
-                        new KeyValue(((ImageView) ((obj instanceof Player) ? ((Player) obj).getImageView() : ((Box) obj).getImageView())).layoutYProperty(), targetY, Interpolator.LINEAR)
-                )
-        );
-        timeline.play();
-    }
-
-    private void resetLevel() {
-        player.relocate(100, 100);
-        box.relocate(200, 200);
-        target.relocate(300, 300);
-    }
 
     public static void main(String[] args) {
         launch(args);
