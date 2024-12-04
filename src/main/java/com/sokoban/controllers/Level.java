@@ -6,6 +6,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import java.io.InputStream;
+import java.util.ArrayList;
+
 //-1表示空,0表示空地，1表示墙，2表示玩家，3表示箱子，4表示目标
 //每个关卡都设置成8*8
 public class Level {
@@ -20,6 +22,7 @@ public class Level {
     private int currentLevelIndex = 0; // 当前关卡索引
     private Pane root; // 游戏场景根节点
     private Player player; // 玩家对象
+    private ArrayList<Box> boxList = new ArrayList<>();
 
     private int LEVEL_WIDTH;
     private int LEVEL_HEIGHT;
@@ -70,7 +73,7 @@ public class Level {
             }
     };
 
-
+    private static Box[][] BOXES = new Box[8][8];
 
     public Level(Pane root) {
         this.root = root;
@@ -89,7 +92,7 @@ public class Level {
     private void createLevel() {
         // 清空当前场景
         root.getChildren().clear();
-
+        root.setPickOnBounds(false);
         // 获取当前关卡的数据
         int[][] levelData = LEVELS[currentLevelIndex];
 
@@ -97,29 +100,33 @@ public class Level {
             for (int x = 0; x < levelData[y].length; x++) {
                 int cellType = levelData[y][x];
                 switch (cellType) {
-                    case EMPTY:
+                    case EMPTY, NULL:
                         root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
                         break;
                     case WALL:
                         root.getChildren().add(new Wall(x * 50.0, y * 50.0).getImageView());
                         break;
                     case PLAYER:
-                        player = new Player(x * 50.0, y * 50.0, this);
-                        root.getChildren().add(new Player(x * 50.0, y * 50.0,this).getImageView());
+                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+                        player = new Player(x * 50.0, y * 50.0,this, root);
                         break;
                     case BOX:
-                        root.getChildren().add(new Box(x * 50.0, y * 50.0).getImageView());
+                        boxList.add(new Box(x * 50.0, y * 50.0));
+                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
                         break;
                     case TARGET:
                         root.getChildren().add(new Target(x * 50.0, y * 50.0).getImageView());
                         break;
-                    case NULL:
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
                     default:
                         // 忽略其他字符
                         break;
                 }
             }
+        }
+        root.getChildren().add(player.getImageView());
+        for(Box box : boxList) {
+            root.getChildren().add(box.getImageView());
+            BOXES[(int) (box.getX() / 50)][(int) box.getY() / 50] = box;
         }
     }
 
@@ -145,7 +152,13 @@ public class Level {
         // 返回指定坐标的单元格类型
         return LEVELS[currentLevelIndex][y][x];
     }
+
     public Player getPlayer() {
         return player;
     }
+
+    public Box getBox(int x, int y) { return BOXES[x][y]; }
+
+    public int getPlayerX() { return (int) (player.getX() / 50); }
+    public int getPlayerY() { return (int) (player.getY() / 50); }
 }

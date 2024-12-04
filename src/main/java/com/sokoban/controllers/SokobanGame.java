@@ -60,15 +60,27 @@ public class SokobanGame extends Application {
             switch (keyCode) {
                 case W:
                     level.getPlayer().moveUp();
+                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty){
+                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveUp();
+                    }
                     break;
                 case S:
                     level.getPlayer().moveDown();
+                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
+                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveDown();
+                    }
                     break;
                 case A:
                     level.getPlayer().moveLeft();
+                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
+                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveLeft();
+                    }
                     break;
                 case D:
                    level.getPlayer().moveRight();
+                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
+                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveRight();
+                    }
                     break;
                 default:
                     break;
