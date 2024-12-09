@@ -41,23 +41,23 @@ public class Box {
         this.imageView.setLayoutY(y);
     }
     public void moveUp() {
-        setImage("/images/up.png");
         relocate(x, y - 50);
     }
 
     public void moveDown() {
-        setImage("/images/down.png");
         relocate(x, y + 50);
     }
 
     public void moveLeft() {
-        setImage("/images/left.png");
         relocate(x - 50, y);
     }
 
     public void moveRight() {
-        setImage("/images/right.png");
         relocate(x + 50, y);
+    }
+
+    public void moveXY(int x, int y) {
+        relocate(this.x + x * 50, this.y + y * 50);
     }
 
     public double getX() {
@@ -70,5 +70,9 @@ public class Box {
 
     public ImageView getImageView() {
         return imageView;
+    }
+
+    public void destroy() {
+        this.imageView = null;
     }
 }

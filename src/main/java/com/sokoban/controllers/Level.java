@@ -7,6 +7,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 //-1表示空,0表示空地，1表示墙，2表示玩家，3表示箱子，4表示目标
 //每个关卡都设置成8*8
@@ -100,6 +101,13 @@ public class Level {
     private void createLevel() {
         // 清空当前场景
         root.getChildren().clear();
+        for (Box box : boxList) {
+            box.destroy();
+        }
+        boxList.clear();
+        for (Box[] boxes : BOXES) {
+            Arrays.fill(boxes, null);
+        }
         root.setPickOnBounds(false);
         // 获取当前关卡的数据
         int[][] levelData = LEVELS[currentLevelIndex];
@@ -173,6 +181,15 @@ public class Level {
     }
 
     public Box getBox(int x, int y) { return BOXES[x][y]; }
+
+    public boolean moveBox(int x, int y, int deltaX, int deltaY) {
+        if (BOXES[x + deltaX][y + deltaY] != null) {
+            return false;
+        }
+        BOXES[x + deltaX][y + deltaY] = BOXES[x][y];
+        BOXES[x][y] = null;
+        return true;
+    }
 
     public int getPlayerX() { return (int) (player.getX() / 50); }
     public int getPlayerY() { return (int) (player.getY() / 50); }

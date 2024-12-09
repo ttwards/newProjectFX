@@ -59,27 +59,27 @@ public class SokobanGame extends Application {
             KeyCode keyCode = event.getCode();
             switch (keyCode) {
                 case W:
-                    level.getPlayer().moveUp();
-                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty){
-                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveUp();
+                    // 尝试将箱子向上移动，如果成功则移动玩家
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, -1)) {
+                        level.getPlayer().moveUp();
                     }
                     break;
                 case S:
-                    level.getPlayer().moveDown();
-                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
-                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveDown();
+                    // 保持原有的向下移动逻辑
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, 1)) {
+                        level.getPlayer().moveDown();
                     }
                     break;
                 case A:
-                    level.getPlayer().moveLeft();
-                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
-                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveLeft();
+                    // 尝试将箱子向左移动，如果成功则移动玩家
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), -1, 0)) {
+                        level.getPlayer().moveLeft();
                     }
                     break;
                 case D:
-                   level.getPlayer().moveRight();
-                    if(!level.getBox(level.getPlayerX(), level.getPlayerY()).isEmpty) {
-                        level.getBox(level.getPlayerX(), level.getPlayerY()).moveRight();
+                    // 尝试将箱子向右移动，如果成功则移动玩家
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 1, 0)) {
+                        level.getPlayer().moveRight();
                     }
                     break;
                 default:
@@ -96,7 +96,9 @@ public class SokobanGame extends Application {
         level.loadLevel(levelIndex);
     }
 
-
+    public boolean hasBound(int x, int y) {
+        if (level.get)
+    }
 
     public static void main(String[] args) {
         // 完全禁用硬件加速
