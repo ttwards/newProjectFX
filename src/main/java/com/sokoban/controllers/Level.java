@@ -131,8 +131,6 @@ public class Level {
                 }
             }
         }
-<<<<<<< HEAD
-
         System.out.println("Children of root pane:");
         root.getChildren().forEach(node -> {
             if (node instanceof ImageView imageView) {
@@ -140,14 +138,11 @@ public class Level {
             } else {
                 System.out.println("Found node: " + node);
             }
-        });
-=======
-        root.getChildren().add(player.getImageView());
+        });root.getChildren().add(player.getImageView());
         for(Box box : boxList) {
             root.getChildren().add(box.getImageView());
             BOXES[(int) (box.getX() / 50)][(int) box.getY() / 50] = box;
         }
->>>>>>> cc83d3f15055c581a4a3fcc15a03002e7df138ae
     }
 
     public boolean isMoveValid(double newX, double newY) {
