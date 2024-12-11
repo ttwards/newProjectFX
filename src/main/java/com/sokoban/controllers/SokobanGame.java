@@ -85,6 +85,9 @@ public class SokobanGame extends Application {
                 default:
                     break;
             }
+            if(level.gameEnd()) {
+                System.out.println("Level ended");
+            }
         });
 
         primaryStage.setTitle("Sokoban Game");

@@ -171,7 +171,7 @@ public class Level {
         return cellType != WALL; // 如果不是墙壁，则移动有效
     }
 
-    public boolean hasBound(int x, int y) {
+    private boolean hasBound(int x, int y) {
         // 检查新位置是否在关卡范围内
         if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
             System.out.println("超出范围");
@@ -183,6 +183,15 @@ public class Level {
 
         // 判断新位置是否是墙壁或其他不可移动的物体
         return cellType == WALL; // 如果不是墙壁，则移动有效
+    }
+
+    public boolean gameEnd() {
+        for (Box box : boxList) {
+            if (LEVELS[currentLevelIndex][(int) (box.getY() / 50)][(int) (box.getX() / 50)] != TARGET) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private int getCellType(int x, int y) {
