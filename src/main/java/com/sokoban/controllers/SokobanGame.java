@@ -96,10 +96,6 @@ public class SokobanGame extends Application {
         level.loadLevel(levelIndex);
     }
 
-    public boolean hasBound(int x, int y) {
-        if (level.get)
-    }
-
     public static void main(String[] args) {
         // 完全禁用硬件加速
         System.setProperty("prism.order", "sw");

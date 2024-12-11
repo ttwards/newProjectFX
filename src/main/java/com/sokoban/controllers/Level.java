@@ -171,6 +171,20 @@ public class Level {
         return cellType != WALL; // 如果不是墙壁，则移动有效
     }
 
+    public boolean hasBound(int x, int y) {
+        // 检查新位置是否在关卡范围内
+        if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
+            System.out.println("超出范围");
+            return false; // 超出范围
+        }
+
+        // 获取新位置的单元格类型
+        int cellType = getCellType(x, y);
+
+        // 判断新位置是否是墙壁或其他不可移动的物体
+        return cellType == WALL; // 如果不是墙壁，则移动有效
+    }
+
     private int getCellType(int x, int y) {
         // 返回指定坐标的单元格类型
         return LEVELS[currentLevelIndex][y][x];
@@ -183,11 +197,18 @@ public class Level {
     public Box getBox(int x, int y) { return BOXES[x][y]; }
 
     public boolean moveBox(int x, int y, int deltaX, int deltaY) {
-        if (BOXES[x + deltaX][y + deltaY] != null) {
+        if(BOXES[x + deltaX][y + deltaY] == null) {
+            System.out.println("No box, move forward");
+            return true;
+        }
+        if (BOXES[x + 2 * deltaX][y + 2 * deltaY] != null || hasBound(x + 2 * deltaX, y + 2 * deltaY)) {
+            System.out.println("Met Bound, move failed");
             return false;
         }
-        BOXES[x + deltaX][y + deltaY] = BOXES[x][y];
-        BOXES[x][y] = null;
+        System.out.println("Box successfully moved");
+        BOXES[x + deltaX][y + deltaY].moveXY(deltaX, deltaY);
+        BOXES[x + 2 * deltaX][y + 2 * deltaY] = BOXES[x + deltaX][y + deltaY];
+        BOXES[x + deltaX][y + deltaY] = null;
         return true;
     }
 
