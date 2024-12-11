@@ -78,6 +78,8 @@ public class Player {
         if (level.isMoveValid(newX, newY)) {
             this.x = newX;
             this.y = newY;
+            level.stepnum++;
+
 
             // 创建动画
             Timeline timeline = new Timeline(

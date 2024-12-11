@@ -40,3 +40,4 @@ build/
 ### Architecture ###
 pom.xml
 *.xml
+*.xml

@@ -20,6 +20,7 @@ public class Level {
     public static final int TARGET = 4;
 
 
+    public int stepnum=0;//步数
     private int currentLevelIndex = 0; // 当前关卡索引
     private Pane root; // 游戏场景根节点
     private Player player; // 玩家对象
