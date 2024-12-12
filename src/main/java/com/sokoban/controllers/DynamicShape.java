@@ -16,17 +16,14 @@ public class DynamicShape extends StaticShape {
 	protected String leftImage;
 	protected String rightImage;
 
-	protected int x;
-	protected int y;
-
-	public DynamicShape(int x, int y, String imagePath) {
+	public DynamicShape(double x, double y, String imagePath) {
 		super(x, y, imagePath);
 	}
 
 	private void animatedMove(int deltaX, int deltaY) {
         int newPixelX = this.x + deltaX;
 		int newPixelY = this.y + deltaY;
-        if (level.isMoveValid(newPixelX, newPixelY)) {
+        if (level.isMoveValid(x / 50, y / 50, deltaX / 50, deltaY / 50)) {
             this.x = newPixelX;
             this.y = newPixelY;
 
@@ -42,7 +39,7 @@ public class DynamicShape extends StaticShape {
             timeline.play();
 
         } else {
-            System.out.println("Invalid move: (" + newPixelX + ", " + newPixelY + ")");
+            System.out.println("Invalid move: (" + newPixelX / 50 + ", " + newPixelY / 50 + ")");
         }
     }
 
@@ -63,6 +60,6 @@ public class DynamicShape extends StaticShape {
     }
 
     public void moveXY(double x, double y) {
-        animatedMove((int)(this.x + x * 50), (int)(this.y + y * 50));
+        animatedMove((int) (x * 50), (int) (y * 50));
     }
 }

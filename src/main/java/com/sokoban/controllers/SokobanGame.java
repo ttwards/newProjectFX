@@ -93,14 +93,14 @@ public class SokobanGame extends Application {
             switch (keyCode) {
                 case W:
                     // 尝试将箱子向上移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, -1)) {
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY() - 1, 0, -1)) {
                         level.getPlayer().moveUp();
                         incrementStepCount();
                     }
                     break;
                 case S:
                     // 保持原有的向下移动逻辑
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, 1)) {
+                    if (level.moveBox(level.getPlayerX(), level.getPlayerY() + 1, 0, 1)) {
                         level.getPlayer().moveDown();
                         incrementStepCount();
 
@@ -108,14 +108,14 @@ public class SokobanGame extends Application {
                     break;
                 case A:
                     // 尝试将箱子向左移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), -1, 0)) {
+                    if (level.moveBox(level.getPlayerX() - 1, level.getPlayerY(), -1, 0)) {
                         level.getPlayer().moveLeft();
                     	incrementStepCount();
                     }
                     break;
                 case D:
                     // 尝试将箱子向右移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 1, 0)) {
+                    if (level.moveBox(level.getPlayerX() + 1, level.getPlayerY(), 1, 0)) {
                         level.getPlayer().moveRight();
                         incrementStepCount();
                     }

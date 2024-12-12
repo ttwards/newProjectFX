@@ -26,16 +26,16 @@ public class Level {
     private int LEVEL_HEIGHT;
 
     // 定义五个关卡
-    private static final int[][][] LEVELS = {
+    private static int[][][] LEVELS = {
             {   // 关卡 1
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,1,1,1,1,1,1,-1},
-                    {-1,1,2,0,0,0,1,-1},
-                    {-1,1,0,0,3,4,1,-1},
-                    {-1,1,0,4,3,0,1,-1},
-                    {-1,1,1,1,1,1,1,-1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1}
+				{1, 1, 1, 1, 1, 1, 1, 1},
+				{1, 0, 4, 0, 3, 0, 0, 1},
+				{1, 3, 0, 0, 4, 1, 0, 1},
+				{1, 0, 0, 1, 0, 0, 0, 1},
+				{1, 0, 0, 1, 2, 3, 0, 1},
+				{1, 0, 0, 1, 0, 0, 0, 1},
+				{1, 0, 4, 0, 0, 0, 0, 1},
+				{1, 1, 1, 1, 1, 1, 1, 1},
             },
             {   // 关卡 2
                     {-1,-1,-1,-1,-1,-1,-1,-1},
@@ -106,6 +106,12 @@ public class Level {
             Arrays.fill(boxes, null);
         }
         root.setPickOnBounds(false);
+
+		MapGenerator mapGenerator = new MapGenerator();
+		mapGenerator.mapMake();
+
+		LEVELS[0] = mapGenerator.getMap();
+		
         // 获取当前关卡的数据
         int[][] levelData = LEVELS[currentLevelIndex];
 
@@ -121,14 +127,14 @@ public class Level {
                         break;
                     case PLAYER:
                         root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
-                        player = new Player(x * 50.0, y * 50.0,this, root);
+                        player = new Player(x, y, this, root);
                         break;
                     case BOX:
-                        boxList.add(new Box(x * 50.0, y * 50.0));
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+						root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+                        boxList.add(new Box(x, y, this, root));
                         break;
                     case TARGET:
-                        root.getChildren().add(new Target(x * 50.0, y * 50.0).getImageView());
+                        root.getChildren().add(new Target(x, y).getImageView());
                         break;
                     default:
                         // 忽略其他字符
@@ -143,10 +149,11 @@ public class Level {
             } else {
                 System.out.println("Found node: " + node);
             }
-        });root.getChildren().add(player.getImageView());
+        });
+		root.getChildren().add(player.getImageView());
         for(Box box : boxList) {
             root.getChildren().add(box.getImageView());
-            BOXES[(int) (box.getX() / 50)][(int) box.getY() / 50] = box;
+            BOXES[(int)(box.getX())][(int)box.getY()] = box;
         }
     }
 
@@ -156,48 +163,26 @@ public class Level {
 
         // 检查新位置是否在关卡范围内
         if (newX < 0 || x >= LEVEL_WIDTH || newY < 0 || newY >= LEVEL_HEIGHT) {
-            System.out.println("超出范围");
+            System.out.printf("超出范围: %d, %d\n", (int)x, (int)y);
             return false; // 超出范围
         }
 
-        // 获取新位置的单元格类型
-        int cellType = getCellType(x, y);
-
-		if(BOXES[(int)newX][(int)newY] == null) {
-            System.out.println("No box, move forward");
-            return true;
-        }
-        if (BOXES[x + 2 * deltaX][y + 2 * deltaY] != null || hasBound(x + 2 * deltaX, y + 2 * deltaY)) {
-            System.out.println("Met Bound, move failed");
+        if (BOXES[(int)(newX)][(int)(newY)] != null) {
+            System.out.printf("Met Box at %d %d, move failed\n", (int)newX, (int)newY);
             return false;
         }
-        System.out.println("Box successfully moved");
-        BOXES[x + deltaX][y + deltaY].moveXY(deltaX, deltaY);
-        BOXES[x + 2 * deltaX][y + 2 * deltaY] = BOXES[x + deltaX][y + deltaY];
-        BOXES[x + deltaX][y + deltaY] = null;
+		if (getCellType((int)newX, (int)newY) == WALL) {
+			System.out.println("Met Wall, move failed");
+			return false;
+		}
+
         return true;
-
-        // 判断新位置是否是墙壁或其他不可移动的物体
-        return cellType != WALL; // 如果不是墙壁，则移动有效
-    }
-
-    private boolean hasBound(int x, int y) {
-        // 检查新位置是否在关卡范围内
-        if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
-            System.out.println("超出范围");
-            return false; // 超出范围
-        }
-
-        // 获取新位置的单元格类型
-        int cellType = getCellType(x, y);
-
-        // 判断新位置是否是墙壁或其他不可移动的物体
-        return cellType == WALL; // 如果不是墙壁，则移动有效
     }
 
     public boolean gameEnd() {
         for (Box box : boxList) {
-            if (LEVELS[currentLevelIndex][(int) (box.getY() / 50)][(int) (box.getX() / 50)] != TARGET) {
+            if (LEVELS[currentLevelIndex][(int)box.getY()][(int)box.getX()] != TARGET) {
+				System.out.println("Box not in target: " + box.getX() + ", " + box.getY());
                 return false;
             }
         }
@@ -215,10 +200,29 @@ public class Level {
 
     public Box getBox(int x, int y) { return BOXES[x][y]; }
 
-    public boolean moveBox(int x, int y, int deltaX, int deltaY) {
+	public boolean moveBox(double x, double y, double deltaX, double deltaY) {
+		if(x > LEVELS[currentLevelIndex][0].length || y > LEVELS[currentLevelIndex].length) {
+			System.out.println("Invalid box position: " + x + ", " + y);
+			return false;
+		}
+		if(BOXES[(int)x][(int)y] == null) {
+			System.out.println("No box at: " + x + ", " + y);
+			return true;
+		}
+		System.out.println("Moving box at: " + x + ", " + y + " by: " + deltaX + ", " + deltaY);
+		if(!isMoveValid(x, y, deltaX, deltaY)) {
+			return false;
+		}
+		int newX = (int)(x + deltaX);
+		int newY = (int)(y + deltaY);
+		System.out.println("New box position: " + newX + ", " + newY);
+		BOXES[(int)x][(int)y].moveXY(deltaX, deltaY);
+        BOXES[newX][newY] = BOXES[(int)x][(int)y];
+        BOXES[(int)x][(int)y] = null;
+		System.out.println("Box moved successfully");
+		return true;
+	}
 
-    }
-
-    public int getPlayerX() { return (int) (player.getX() / 50); }
-    public int getPlayerY() { return (int) (player.getY() / 50); }
+    public double getPlayerX() { return player.getX(); }
+    public double getPlayerY() { return player.getY(); }
 }

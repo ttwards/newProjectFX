@@ -10,7 +10,7 @@ import java.io.InputStream;
 
 public class Player extends DynamicShape {
     public Player(double x, double y, Level level, Pane container) {
-		super((int)x * 50, (int) y * 50, "/images/down.png");
+		super(x, y, "/images/down.png");
 
 		this.upImage = "/images/up.png";
 		this.downImage = "/images/down.png";
