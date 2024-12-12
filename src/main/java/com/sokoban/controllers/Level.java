@@ -1,11 +1,7 @@
 package com.sokoban.controllers;
 
-
-
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -154,19 +150,32 @@ public class Level {
         }
     }
 
-    public boolean isMoveValid(double newX, double newY) {
-        // 将新坐标转换为网格坐标
-        int x = (int) (newX / 50);
-        int y = (int) (newY / 50);
+    public boolean isMoveValid(double x, double y, double deltaX, double deltaY) {
+		double newX = x + deltaX;
+		double newY = y + deltaY;
 
         // 检查新位置是否在关卡范围内
-        if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
+        if (newX < 0 || x >= LEVEL_WIDTH || newY < 0 || newY >= LEVEL_HEIGHT) {
             System.out.println("超出范围");
             return false; // 超出范围
         }
 
         // 获取新位置的单元格类型
         int cellType = getCellType(x, y);
+
+		if(BOXES[(int)newX][(int)newY] == null) {
+            System.out.println("No box, move forward");
+            return true;
+        }
+        if (BOXES[x + 2 * deltaX][y + 2 * deltaY] != null || hasBound(x + 2 * deltaX, y + 2 * deltaY)) {
+            System.out.println("Met Bound, move failed");
+            return false;
+        }
+        System.out.println("Box successfully moved");
+        BOXES[x + deltaX][y + deltaY].moveXY(deltaX, deltaY);
+        BOXES[x + 2 * deltaX][y + 2 * deltaY] = BOXES[x + deltaX][y + deltaY];
+        BOXES[x + deltaX][y + deltaY] = null;
+        return true;
 
         // 判断新位置是否是墙壁或其他不可移动的物体
         return cellType != WALL; // 如果不是墙壁，则移动有效
@@ -207,19 +216,7 @@ public class Level {
     public Box getBox(int x, int y) { return BOXES[x][y]; }
 
     public boolean moveBox(int x, int y, int deltaX, int deltaY) {
-        if(BOXES[x + deltaX][y + deltaY] == null) {
-            System.out.println("No box, move forward");
-            return true;
-        }
-        if (BOXES[x + 2 * deltaX][y + 2 * deltaY] != null || hasBound(x + 2 * deltaX, y + 2 * deltaY)) {
-            System.out.println("Met Bound, move failed");
-            return false;
-        }
-        System.out.println("Box successfully moved");
-        BOXES[x + deltaX][y + deltaY].moveXY(deltaX, deltaY);
-        BOXES[x + 2 * deltaX][y + 2 * deltaY] = BOXES[x + deltaX][y + deltaY];
-        BOXES[x + deltaX][y + deltaY] = null;
-        return true;
+
     }
 
     public int getPlayerX() { return (int) (player.getX() / 50); }

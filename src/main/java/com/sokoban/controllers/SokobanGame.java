@@ -40,9 +40,6 @@ public class SokobanGame extends Application {
 
 
 
-
-
-
     @Override
     public void start(Stage primaryStage) {
         // 创建主布局
@@ -113,7 +110,7 @@ public class SokobanGame extends Application {
                     // 尝试将箱子向左移动，如果成功则移动玩家
                     if (level.moveBox(level.getPlayerX(), level.getPlayerY(), -1, 0)) {
                         level.getPlayer().moveLeft();
-                       incrementStepCount();
+                    	incrementStepCount();
                     }
                     break;
                 case D:
