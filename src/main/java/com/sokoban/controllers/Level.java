@@ -111,7 +111,9 @@ public class Level {
 		mapGenerator.mapMake();
 
 		LEVELS[0] = mapGenerator.getMap();
-		
+
+		String solution = SokobanSolver.solve(LEVELS[0]);
+		System.out.println("Solution: " + solution);
         // 获取当前关卡的数据
         int[][] levelData = LEVELS[currentLevelIndex];
 
@@ -120,17 +122,17 @@ public class Level {
                 int cellType = levelData[y][x];
                 switch (cellType) {
                     case EMPTY, NULL:
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+                        root.getChildren().add(new Empty(x, y).getImageView());
                         break;
                     case WALL:
-                        root.getChildren().add(new Wall(x * 50.0, y * 50.0).getImageView());
+                        root.getChildren().add(new Wall(x, y).getImageView());
                         break;
                     case PLAYER:
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+                        root.getChildren().add(new Empty(x, y).getImageView());
                         player = new Player(x, y, this, root);
                         break;
                     case BOX:
-						root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
+						root.getChildren().add(new Empty(x, y).getImageView());
                         boxList.add(new Box(x, y, this, root));
                         break;
                     case TARGET:
@@ -142,14 +144,6 @@ public class Level {
                 }
             }
         }
-        System.out.println("Children of root pane:");
-        root.getChildren().forEach(node -> {
-            if (node instanceof ImageView imageView) {
-                System.out.println("Found ImageView with image: " + imageView.getImage());
-            } else {
-                System.out.println("Found node: " + node);
-            }
-        });
 		root.getChildren().add(player.getImageView());
         for(Box box : boxList) {
             root.getChildren().add(box.getImageView());
@@ -182,7 +176,6 @@ public class Level {
     public boolean gameEnd() {
         for (Box box : boxList) {
             if (LEVELS[currentLevelIndex][(int)box.getY()][(int)box.getX()] != TARGET) {
-				System.out.println("Box not in target: " + box.getX() + ", " + box.getY());
                 return false;
             }
         }

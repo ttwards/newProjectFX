@@ -16,12 +16,10 @@ public class StaticShape {
         this.imageView.setFitWidth(50);
         this.imageView.setFitHeight(50);
         this.imageView.relocate(this.x, this.y);
-
-		System.out.println("StaticShape created at: (" + x + ", " + y + ")");
+		// System.out.println("StaticShape created at: (" + x + ", " + y + ")");
 	}
 
 	private Image setImage(String imagePath) {
-        System.out.println("Loading image from path: " + imagePath);
         InputStream inputStream = getClass().getResourceAsStream(imagePath);
         if (inputStream == null) {
             throw new RuntimeException("Failed to find resource at path: " + imagePath);

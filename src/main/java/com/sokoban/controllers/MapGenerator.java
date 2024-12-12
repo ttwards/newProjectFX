@@ -93,7 +93,7 @@ public class MapGenerator {
         if (map[x][y-1] == WALL) wallCount++;
         if (map[x][y+1] == WALL) wallCount++;
         
-        return wallCount <= 1; // 最多只能有一面墙相邻
+        return wallCount < 1; // 最多只能有一面墙相邻
     }
     
     public void printMap() {
@@ -112,10 +112,4 @@ public class MapGenerator {
 	public int[][] getMap() {
 		return map;
 	}
-    
-    public static void main(String[] args) {
-        MapGenerator generator = new MapGenerator();
-        generator.mapMake();
-        generator.printMap();
-    }
 }
