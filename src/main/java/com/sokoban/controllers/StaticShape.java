@@ -8,6 +8,8 @@ import javafx.scene.image.ImageView;
 public class StaticShape {
 	protected int x, y;
 	protected ImageView imageView;
+	public String imagePath;
+	
 	public StaticShape(double x, double y, String imagePath) {
         this.x = (int) (x * 50);
         this.y = (int) (y * 50);
@@ -16,7 +18,7 @@ public class StaticShape {
         this.imageView.setFitWidth(50);
         this.imageView.setFitHeight(50);
         this.imageView.relocate(this.x, this.y);
-		// System.out.println("StaticShape created at: (" + x + ", " + y + ")");
+		System.out.println("StaticShape created at: (" + x + ", " + y + ")");
 	}
 
 	private Image setImage(String imagePath) {
@@ -25,6 +27,7 @@ public class StaticShape {
             throw new RuntimeException("Failed to find resource at path: " + imagePath);
         }
         Image image = new Image(inputStream);
+		this.imagePath = imagePath;
 		return image;
 	}
 

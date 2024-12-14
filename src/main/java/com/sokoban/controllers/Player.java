@@ -20,13 +20,4 @@ public class Player extends DynamicShape {
         this.level = level;
         this.container = container;
     }
-
-    public void setImage(String imagePath) {
-        System.out.println("Loading image from path: " + imagePath);
-        InputStream inputStream = getClass().getResourceAsStream(imagePath);
-        if (inputStream == null) {
-            throw new RuntimeException("Failed to find resource at path: " + imagePath);
-        }
-        this.imageView.setImage(new Image(inputStream));
-    }
 }
