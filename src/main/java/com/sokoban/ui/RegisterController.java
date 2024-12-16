@@ -5,6 +5,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Button;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,22 +24,42 @@ public class RegisterController {
     @FXML private Button cancelButton;
     @FXML private Button registerButton;
 
+	private static final String SERVER_IP = "localhost";
+    private static final int SERVER_PORT = 8888;
+
     @FXML
     private void cancelRegister(ActionEvent event) throws Exception {
         switchToLogin();
     }
 
     @FXML
-    private void confirmRegister(ActionEvent event) throws Exception {
-        if (validRegister()) {
-            // 切换到登记选择
-            switchToLevelSelect();
+    private void confirmRegister() throws IOException, Exception {
+		try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+
+            if (validRegister(out, in)) {
+				switchToLevelSelect();
+			}
+            
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }
+	}
+    private boolean validRegister(PrintWriter out, BufferedReader in) throws IOException, Exception {
+        String username = usernameField.getText();
+        String password = passwordField.getText();
 
+        out.println("REGISTER|" + username + "|" + password);
+        String response = in.readLine();
+        String[] parts = response.split("\\|");
 
-    private boolean validRegister() {
-        return true;
+        if ("SUCCESS".equals(parts[0])) {
+            return true;
+        } else {
+            System.out.println("注册失败：" + parts[1]);
+			return false;
+        }
     }
 
     private void switchToLevelSelect() throws Exception {

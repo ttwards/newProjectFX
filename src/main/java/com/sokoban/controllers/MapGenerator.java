@@ -75,6 +75,8 @@ public class MapGenerator {
 		return spaces;
 	}
 
+	private boolean isValidMove(boolean visited[][], )
+
 	// 验证箱子位置的合法性
 	private boolean isValidBoxPosition(int x, int y) {
 		// 检查是否在死角
