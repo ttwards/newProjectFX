@@ -4,16 +4,16 @@ import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Font;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -65,8 +65,15 @@ public class SokobanGame extends Application {
             buttonContainer.getChildren().add(button);
         }
 
+        //功能按钮放右边
+        VBox functionContainer=new VBox(20);
+        functionContainer.setPadding(new Insets(10));
+        functionContainer.setAlignment(Pos.TOP_CENTER); // 设置VBox内容顶部居中
         // 添加“重新开始”按钮
+        HBox restartContainer = new HBox();
+        restartContainer.setAlignment(Pos.CENTER);
         Button restartButton = new Button("Restart");
+        restartButton.setPrefSize(190, 30);
         restartButton.setOnAction(event -> restartLevel());
 
         restartContainer.getChildren().add(restartButton);
@@ -77,12 +84,6 @@ public class SokobanGame extends Application {
         Button downButton = createImageButton("/arrows/arrowDown.png", "↓");
         Button leftButton = createImageButton("/arrows/arrowLeft.png", "←");
         Button rightButton = createImageButton("/arrows/arrowRight.png", "→");
-
-        
-			// 添加“重新开始”按钮
-			Button restartButton = new Button("Restart");
-			restartButton.setOnAction(event -> restartLevel());
-			buttonContainer.getChildren().add(restartButton); // 将重启按钮添加到按钮容器
 
 			// 添加“AI求解”按钮
 			Button solveButton = new Button("AI Solve");
@@ -183,6 +184,16 @@ public class SokobanGame extends Application {
         launch(args);
     }
 
+    private Button createImageButton(String imagePath, String text) {
+        Image image = new Image(getClass().getResourceAsStream( imagePath));
+        ImageView imageView = new ImageView(image);
+        imageView.setFitWidth(32); // 设置图像宽度
+        imageView.setFitHeight(32); // 设置图像高度
+        Button button = new Button(text, imageView);
+        return button;
+    }
+
+
     private void loadLevel(int levelIndex) {
 			this.currentLevelIndex = levelIndex; // 更新当前关卡索引
 			map = level.createLevel(levelIndex);
@@ -244,4 +255,51 @@ public class SokobanGame extends Application {
         level.stepnum = 0;
         Platform.runLater(() -> lblStepCount.setText("Steps: " + level.stepnum)); // 确保在JavaFX应用程序线程上更新UI
     }
+
+    private void showVictoryDialog(Stage ownerstage) {
+        // 创建新的Stage作为对话框
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.WINDOW_MODAL);
+        dialogStage.initOwner(ownerstage); // 设置父窗口
+
+        // 创建布局容器
+        VBox dialogVbox = new VBox(10);
+        dialogVbox.setPadding(new Insets(10));
+        dialogVbox.setAlignment(Pos.CENTER);
+
+        // 添加胜利信息
+        Label victoryLabel = new Label("Congratulations!");
+        victoryLabel.setFont(BIGGER_FONT);
+
+        // 创建“重新开始”按钮
+        Button restartButton = new Button("Restart Level");
+        restartButton.setPrefSize(100,30);
+        restartButton.setOnAction(event -> {
+            restartLevel();
+            dialogStage.close(); // 关闭对话框
+        });
+
+        // 创建“下一关”按钮（如果还有下一关）
+        Button nextLevelButton = new Button("Next Level");
+        nextLevelButton.setPrefSize(80,30);
+        if (currentLevelIndex < 4) { // 假设有5个关卡
+            nextLevelButton.setOnAction(event -> {
+                loadLevel(currentLevelIndex + 1);
+                dialogStage.close(); // 关闭对话框
+            });
+        } else {
+            nextLevelButton.setDisable(true); // 如果没有下一关，则禁用按钮
+        }
+
+        // 将组件添加到布局容器中
+        dialogVbox.getChildren().addAll(victoryLabel, restartButton, nextLevelButton);
+
+        // 创建Scene并设置给对话框Stage
+        Scene dialogScene = new Scene(dialogVbox, 300, 200);
+        dialogStage.setScene(dialogScene);
+
+        // 显示对话框
+        dialogStage.showAndWait();
+    }
+
 }
