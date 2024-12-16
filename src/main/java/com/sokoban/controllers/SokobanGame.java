@@ -78,6 +78,25 @@ public class SokobanGame extends Application {
         Button leftButton = createImageButton("/arrows/arrowLeft.png", "←");
         Button rightButton = createImageButton("/arrows/arrowRight.png", "→");
 
+        
+			// 添加“重新开始”按钮
+			Button restartButton = new Button("Restart");
+			restartButton.setOnAction(event -> restartLevel());
+			buttonContainer.getChildren().add(restartButton); // 将重启按钮添加到按钮容器
+
+			// 添加“AI求解”按钮
+			Button solveButton = new Button("AI Solve");
+			solveButton.setOnAction(event -> aiSolve());
+			buttonContainer.getChildren().add(solveButton); // 将AI求解按钮添加到按钮容器
+
+			// 添加重做按钮
+			Button redoButton = new Button("Redo");
+			redoButton.setOnAction(event -> {
+				if (map.undoMove(1)) {
+					incrementStepCount();
+				}
+			});
+			buttonContainer.getChildren().add(redoButton);
 
 
         // 设置方向按钮大小
@@ -105,9 +124,9 @@ public class SokobanGame extends Application {
         leftButton.setOnMouseClicked(event -> handleDirectionInput(KeyCode.LEFT,primaryStage));
         rightButton.setOnMouseClicked(event -> handleDirectionInput(KeyCode.RIGHT,primaryStage));
 
-// 添加方向按钮事件监听器（保持原有的键盘事件监听器）
+        // 添加方向按钮事件监听器（保持原有的键盘事件监听器）
 
-
+        
 
 
 
@@ -138,51 +157,20 @@ public class SokobanGame extends Application {
         // 默认加载第一关
         loadLevel(0);
 
-        scene.setOnKeyPressed(event -> {
-            KeyCode keyCode = event.getCode();
-            if (!hasStartedMoving) { // 如果玩家还没有开始移动，则启动计时器
-                resetTimer();
-                hasStartedMoving = true;
-            }
-            switch (keyCode) {
-                case W:
-                    // 尝试将箱子向上移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, -1)) {
-                        level.getPlayer().moveUp();
-                        incrementStepCount();
-                    }
-                    break;
-                case S:
-                    // 保持原有的向下移动逻辑
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 0, 1)) {
-                        level.getPlayer().moveDown();
-                        incrementStepCount();
-
-                    }
-                    break;
-                case A:
-                    // 尝试将箱子向左移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), -1, 0)) {
-                        level.getPlayer().moveLeft();
-                       incrementStepCount();
-                    }
-                    break;
-                case D:
-                    // 尝试将箱子向右移动，如果成功则移动玩家
-                    if (level.moveBox(level.getPlayerX(), level.getPlayerY(), 1, 0)) {
-                        level.getPlayer().moveRight();
-                        incrementStepCount();
-                    }
-                    break;
-                default:
-                    break;
-            }
-            if(level.gameEnd()) {
-                System.out.println("Level ended");
-                stopTimer();
-                hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
-            }
-        });
+        
+			scene.setOnKeyPressed(event -> {
+				KeyCode keyCode = event.getCode();
+				if (!hasStartedMoving) { // 如果玩家还没有开始移动，则启动计时器
+					resetTimer();
+					hasStartedMoving = true;
+				}
+				handleKeyPress(keyCode.toString().charAt(0));
+				if(level.gameEnd()) {
+					System.out.println("Level ended");
+					stopTimer();
+					hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
+				}
+			});
 
         primaryStage.setTitle("Sokoban Game");
         primaryStage.setScene(scene);
@@ -192,20 +180,17 @@ public class SokobanGame extends Application {
 
 
     public static void main(String[] args) {
-        // 完全禁用硬件加速
-        System.setProperty("prism.order", "sw");
-        System.setProperty("prism.text", "t2k");
-        System.setProperty("prism.vsync", "false");
         launch(args);
     }
 
     private void loadLevel(int levelIndex) {
-        this.currentLevelIndex = levelIndex; // 更新当前关卡索引
-        level.loadLevel(levelIndex);
-        hasStartedMoving = false; // 当加载新关卡时重置移动状态
-        stopTimer(); // 确保停止任何正在运行的计时器
-        resetStepCount();
-    }
+			this.currentLevelIndex = levelIndex; // 更新当前关卡索引
+			map = level.createLevel(levelIndex);
+			hasStartedMoving = false; // 当加载新关卡时重置移动状态
+			stopTimer(); // 确保停止任何正在运行的计时器
+			resetStepCount();
+		}
+
 
     private void resetTimer() {
         startTime = System.currentTimeMillis();
