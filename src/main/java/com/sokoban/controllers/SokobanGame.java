@@ -244,7 +244,6 @@ public class SokobanGame extends Application {
         // 显示对话框
         dialogStage.showAndWait();
     }
-
     private void loadLevel(int levelIndex) {
         this.currentLevelIndex = levelIndex; // 更新当前关卡索引
         level.loadLevel(levelIndex);
