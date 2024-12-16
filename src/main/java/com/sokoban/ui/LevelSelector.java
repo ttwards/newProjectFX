@@ -1,5 +1,7 @@
 package com.sokoban.ui;
 
+import com.sokoban.controllers.SokobanGame;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,10 +20,10 @@ public class LevelSelector {
 
     @FXML
     public void levelSelect1(ActionEvent event) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/views/GameView.fxml"));
         Stage stage = (Stage) level1Button.getScene().getWindow();
-        stage.setScene(new Scene(root));
-        stage.setUserData(1);
+		stage.close();
+		SokobanGame sokobanGame = new SokobanGame();
+		sokobanGame.start(new Stage());
     }
 
     @FXML
