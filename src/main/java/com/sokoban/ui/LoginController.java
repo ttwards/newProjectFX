@@ -1,5 +1,5 @@
 // LoginController.java
-package com.sokoban.controllers;
+package com.sokoban.ui;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
@@ -11,39 +11,36 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class RegisterController {
+public class LoginController {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
-    @FXML private Button cancelButton;
+    @FXML private Button loginButton;
     @FXML private Button registerButton;
 
     @FXML
-    private void cancelRegister(ActionEvent event) throws Exception {
-        switchToLogin();
-    }
-
-    @FXML
-    private void confirmRegister(ActionEvent event) throws Exception {
-        if (validRegister()) {
-            // 切换到登记选择
+    private void handleLogin(ActionEvent event) throws Exception {
+        // 验证登录逻辑
+        if (validateLogin()) {
             switchToLevelSelect();
         }
     }
 
+    @FXML
+    private void handleRegister(ActionEvent event) throws Exception {
+        // 切换到注册界面
+        Parent root = FXMLLoader.load(getClass().getResource("/views/RegisterView.fxml"));
+        Stage stage = (Stage) registerButton.getScene().getWindow();
+        stage.setScene(new Scene(root));
+    }
 
-    private boolean validRegister() {
+    private boolean validateLogin() {
+        // 实现登录验证逻辑
         return true;
     }
 
     private void switchToLevelSelect() throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("/views/LevelSelectView.fxml"));
-        Stage stage = (Stage) registerButton.getScene().getWindow();
-        stage.setScene(new Scene(root));
-    }
-
-    private void switchToLogin() throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/views/LoginView.fxml"));
-        Stage stage = (Stage) cancelButton.getScene().getWindow();
+        Stage stage = (Stage) loginButton.getScene().getWindow();
         stage.setScene(new Scene(root));
     }
 }

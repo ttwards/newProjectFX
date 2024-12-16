@@ -1,227 +1,95 @@
 package com.sokoban.controllers;
 
-
-
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 //-1表示空,0表示空地，1表示墙，2表示玩家，3表示箱子，4表示目标
 //每个关卡都设置成8*8
 public class Level {
-    public static final int NULL=-1;
-    public static final int EMPTY = 0;
-    public static final int WALL = 1;
-    public static final int PLAYER = 2;
-    public static final int BOX = 3;
-    public static final int TARGET = 4;
-
-
-    public int stepnum=0;//步数
+	public int stepnum=0;//步数
     private int currentLevelIndex = 0; // 当前关卡索引
     private Pane root; // 游戏场景根节点
-    private Player player; // 玩家对象
-    private ArrayList<Box> boxList = new ArrayList<>();
 
-    private int LEVEL_WIDTH;
-    private int LEVEL_HEIGHT;
-
-    // 定义五个关卡
-    private static final int[][][] LEVELS = {
-            {   // 关卡 1
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,1,1,1,1,1,1,-1},
-                    {-1,1,2,0,0,0,1,-1},
-                    {-1,1,0,0,3,4,1,-1},
-                    {-1,1,0,4,3,0,1,-1},
-                    {-1,1,1,1,1,1,1,-1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1}
-            },
-            {   // 关卡 2
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,1,1,1,1,1,1,0},
-                    {-1,1,2,0,0,0,1,1},
-                    {-1,1,0,3,3,0,0,1},
-                    {-1,1,0,1,4,0,4,1},
-                    {-1,1,0,0,0,0,0,1},
-                    {-1,1,1,1,1,1,1,1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1}
-            },
-            {   // 关卡 3
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,-1,-1,1,1,1,1,-1},
-                    {-1,1,1,1,0,0,1,-1},
-                    {-1,1,2,0,4,3,1,1},
-                    {-1,1,0,0,0,3,0,1},
-                    {-1,1,0,1,4,0,0,1},
-                    {-1,1,0,0,0,0,0,1},
-                    {-1,1,1,1,1,1,1,1}
-            },
-            {   // 关卡 4
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {-1,-1,1,1,1,1,1,-1},
-                    {-1,1,1,2,0,0,1,1},
-                    {-1,1,0,0,1,0,0,1},
-                    {-1,1,0,3,5,3,0,1},
-                    {-1,1,0,0,4,0,0,1},
-                    {-1,1,1,0,4,0,1,1},
-                    {-1,-1,1,1,1,1,1,-1}
-            },
-            {   // 关卡 5
-                    {-1,-1,-1,-1,-1,-1,-1,-1},
-                    {1,1,1,1,1,1,-1,-1},
-                    {1,0,0,0,0,1,1,1},
-                    {1,0,0,0,4,4,0,1},
-                    {1,0,3,3,3,2,0,1},
-                    {1,0,0,1,0,4,0,1},
-                    {1,1,1,1,1,1,1,1},
-                    {-1,-1,-1,-1,-1,-1,-1,-1}
-            }
-    };
-
-    private static Box[][] BOXES = new Box[8][8];
+	private static Backend map;
 
     public Level(Pane root) {
         this.root = root;
-        this.LEVEL_WIDTH = LEVELS[0][0].length;
-        this.LEVEL_HEIGHT = LEVELS[0].length;
+        // this.LEVEL_WIDTH = LEVELS[0][0].length;
+        // this.LEVEL_HEIGHT = LEVELS[0].length;
     }
 
-    public void loadLevel(int levelIndex) {
-        if (levelIndex < 0 || levelIndex >= LEVELS.length) {
-            throw new IllegalArgumentException("Invalid level index: " + levelIndex);
+	public void reShader() {
+		clearGraph();
+		map.reloadLevel(this, root);
+		StaticShape[][] staticShapes = Backend.getLevel();
+		for (int y = 0; y < staticShapes.length; y++) {
+			for (int x = 0; x < staticShapes[y].length; x++) {
+				StaticShape shape = staticShapes[x][y];
+				if (shape != null) {
+					root.getChildren().add(shape.getImageView());
+					System.out.println("Picture at x: " + shape.getX() + ", y: " + shape.getY() + " path: " + shape.imagePath);
+				}
+			}
+		}
+
+		// 保证DynamicShape在静态对象之上
+		DynamicShape dynamicShapes[] = map.getDynamicShapes();
+        for(DynamicShape shape : dynamicShapes) {
+            root.getChildren().add(shape.getImageView());
+			System.out.println("Adding dynamic shape at " + shape.getX() + ", " + shape.getY());
         }
-        currentLevelIndex = levelIndex;
-        createLevel();
-    }
+	}
 
-    private void createLevel() {
+
+    public Backend createLevel(int levelIndex) {
         // 清空当前场景
-        root.getChildren().clear();
-        for (Box box : boxList) {
-            box.destroy();
+		clearGraph();
+
+		map = new Backend(10, 10, this, root);
+
+		System.out.println("Loading level " + (currentLevelIndex));
+
+		StaticShape[][] staticShapes = Backend.getLevel();
+		for (int y = 0; y < staticShapes.length; y++) {
+			for (int x = 0; x < staticShapes[y].length; x++) {
+				StaticShape shape = staticShapes[x][y];
+				if (shape != null) {
+					root.getChildren().add(shape.getImageView());
+					System.out.println("Picture at x: " + shape.getX() + ", y: " + shape.getY() + " path: " + shape.imagePath);
+				}
+			}
+		}
+
+		// 保证DynamicShape在静态对象之上
+		DynamicShape dynamicShapes[] = map.getDynamicShapes();
+        for(DynamicShape shape : dynamicShapes) {
+            root.getChildren().add(shape.getImageView());
+			System.out.println("Adding dynamic shape at " + shape.getX() + ", " + shape.getY());
         }
-        boxList.clear();
-        for (Box[] boxes : BOXES) {
-            Arrays.fill(boxes, null);
-        }
-        root.setPickOnBounds(false);
-        // 获取当前关卡的数据
-        int[][] levelData = LEVELS[currentLevelIndex];
-
-        for (int y = 0; y < levelData.length; y++) {
-            for (int x = 0; x < levelData[y].length; x++) {
-                int cellType = levelData[y][x];
-                switch (cellType) {
-                    case EMPTY, NULL:
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
-                        break;
-                    case WALL:
-                        root.getChildren().add(new Wall(x * 50.0, y * 50.0).getImageView());
-                        break;
-                    case PLAYER:
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
-                        player = new Player(x * 50.0, y * 50.0,this, root);
-                        break;
-                    case BOX:
-                        boxList.add(new Box(x * 50.0, y * 50.0));
-                        root.getChildren().add(new Empty(x * 50.0, y * 50.0).getImageView());
-                        break;
-                    case TARGET:
-                        root.getChildren().add(new Target(x * 50.0, y * 50.0).getImageView());
-                        break;
-                    default:
-                        // 忽略其他字符
-                        break;
-                }
-            }
-        }
-        System.out.println("Children of root pane:");
-        root.getChildren().forEach(node -> {
-            if (node instanceof ImageView imageView) {
-                System.out.println("Found ImageView with image: " + imageView.getImage());
-            } else {
-                System.out.println("Found node: " + node);
-            }
-        });root.getChildren().add(player.getImageView());
-        for(Box box : boxList) {
-            root.getChildren().add(box.getImageView());
-            BOXES[(int) (box.getX() / 50)][(int) box.getY() / 50] = box;
-        }
-    }
-
-    public boolean isMoveValid(double newX, double newY) {
-        // 将新坐标转换为网格坐标
-        int x = (int) (newX / 50);
-        int y = (int) (newY / 50);
-
-        // 检查新位置是否在关卡范围内
-        if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
-            System.out.println("超出范围");
-            return false; // 超出范围
-        }
-
-        // 获取新位置的单元格类型
-        int cellType = getCellType(x, y);
-
-        // 判断新位置是否是墙壁或其他不可移动的物体
-        return cellType != WALL; // 如果不是墙壁，则移动有效
-    }
-
-    private boolean hasBound(int x, int y) {
-        // 检查新位置是否在关卡范围内
-        if (x < 0 || x >= LEVEL_WIDTH || y < 0 || y >= LEVEL_HEIGHT) {
-            System.out.println("超出范围");
-            return false; // 超出范围
-        }
-
-        // 获取新位置的单元格类型
-        int cellType = getCellType(x, y);
-
-        // 判断新位置是否是墙壁或其他不可移动的物体
-        return cellType == WALL; // 如果不是墙壁，则移动有效
+		return map;
     }
 
     public boolean gameEnd() {
-        for (Box box : boxList) {
-            if (LEVELS[currentLevelIndex][(int) (box.getY() / 50)][(int) (box.getX() / 50)] != TARGET) {
+		DynamicShape dynamicShapes[] = map.getDynamicShapes();
+        for (DynamicShape shape : dynamicShapes) {
+            if (shape.getClass() == Box.class && 
+                    Backend.getAt(shape.getX(), shape.getY()).getClass() != Target.class) {
                 return false;
             }
         }
         return true;
     }
 
-    private int getCellType(int x, int y) {
-        // 返回指定坐标的单元格类型
-        return LEVELS[currentLevelIndex][y][x];
-    }
-
-    public Player getPlayer() {
-        return player;
-    }
-
-    public Box getBox(int x, int y) { return BOXES[x][y]; }
-
-    public boolean moveBox(int x, int y, int deltaX, int deltaY) {
-        if(BOXES[x + deltaX][y + deltaY] == null) {
-            System.out.println("No box, move forward");
-            return true;
-        }
-        if (BOXES[x + 2 * deltaX][y + 2 * deltaY] != null || hasBound(x + 2 * deltaX, y + 2 * deltaY)) {
-            System.out.println("Met Bound, move failed");
-            return false;
-        }
-        System.out.println("Box successfully moved");
-        BOXES[x + deltaX][y + deltaY].moveXY(deltaX, deltaY);
-        BOXES[x + 2 * deltaX][y + 2 * deltaY] = BOXES[x + deltaX][y + deltaY];
-        BOXES[x + deltaX][y + deltaY] = null;
-        return true;
-    }
-
-    public int getPlayerX() { return (int) (player.getX() / 50); }
-    public int getPlayerY() { return (int) (player.getY() / 50); }
+	private void clearGraph() {
+		if(map != null) {
+			root.getChildren().clear();
+			root.setPickOnBounds(false);
+			DynamicShape dynamicShapes[] = map.getDynamicShapes();
+			for (DynamicShape shape : dynamicShapes) {
+				if(shape.getClass() == Box.class) {
+					Box box = (Box)shape;
+					box.destroy();
+				}
+			}
+		}
+	}
 }

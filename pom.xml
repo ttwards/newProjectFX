@@ -89,18 +89,6 @@
         </configuration>
       </plugin>
 
-      <plugin>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-maven-plugin</artifactId>
-        <version>0.0.8</version>
-        <configuration>
-          <mainClass>com.sokoban.SokobanGame.start</mainClass>
-          <options>
-            <option>--add-opens</option>
-            <option>java.base/java.lang=ALL-UNNAMED</option>
-          </options>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 </project>

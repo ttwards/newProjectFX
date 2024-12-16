@@ -1,4 +1,4 @@
-package com.sokoban.controllers;
+package com.sokoban.ui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
