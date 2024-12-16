@@ -199,51 +199,6 @@ public class SokobanGame extends Application {
         launch(args);
     }
 
-    private void showVictoryDialog(Stage ownerstage) {
-        // 创建新的Stage作为对话框
-        Stage dialogStage = new Stage();
-        dialogStage.initModality(Modality.WINDOW_MODAL);
-        dialogStage.initOwner(ownerstage); // 设置父窗口
-
-        // 创建布局容器
-        VBox dialogVbox = new VBox(10);
-        dialogVbox.setPadding(new Insets(10));
-        dialogVbox.setAlignment(Pos.CENTER);
-
-        // 添加胜利信息
-        Label victoryLabel = new Label("Congratulations!");
-        victoryLabel.setFont(BIGGER_FONT);
-
-        // 创建“重新开始”按钮
-        Button restartButton = new Button("Restart Level");
-        restartButton.setPrefSize(100,30);
-        restartButton.setOnAction(event -> {
-            restartLevel();
-            dialogStage.close(); // 关闭对话框
-        });
-
-        // 创建“下一关”按钮（如果还有下一关）
-        Button nextLevelButton = new Button("Next Level");
-        nextLevelButton.setPrefSize(80,30);
-        if (currentLevelIndex < 4) { // 假设有5个关卡
-            nextLevelButton.setOnAction(event -> {
-                loadLevel(currentLevelIndex + 1);
-                dialogStage.close(); // 关闭对话框
-            });
-        } else {
-            nextLevelButton.setDisable(true); // 如果没有下一关，则禁用按钮
-        }
-
-        // 将组件添加到布局容器中
-        dialogVbox.getChildren().addAll(victoryLabel, restartButton, nextLevelButton);
-
-        // 创建Scene并设置给对话框Stage
-        Scene dialogScene = new Scene(dialogVbox, 300, 200);
-        dialogStage.setScene(dialogScene);
-
-        // 显示对话框
-        dialogStage.showAndWait();
-    }
     private void loadLevel(int levelIndex) {
         this.currentLevelIndex = levelIndex; // 更新当前关卡索引
         level.loadLevel(levelIndex);
