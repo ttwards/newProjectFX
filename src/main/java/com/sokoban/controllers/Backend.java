@@ -1,5 +1,16 @@
 package com.sokoban.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import javafx.scene.layout.Pane;
@@ -22,9 +33,9 @@ public class Backend {
 
 	private static DynamicShape[][] levelDynamicShapes = new DynamicShape[12][12];
 
-	private static int[][] levelArray = new int[12][12];
+	private int[][] levelArray = new int[12][12];
 
-	private static int[][] levelArrayDynamic = new int[12][12];
+	private int[][] levelArrayDynamic = new int[12][12];
 
 	private static ArrayList<DynamicShape> dynamicShapes = new ArrayList<>();
 
@@ -34,31 +45,38 @@ public class Backend {
 
 	private static Player player;
 
+	private static final String SAVE_DIR = System.getProperty("user.home") + File.separator + ".sokoban"
+			+ File.separator + "maps";
+
 	public Backend(int x, int y, Level level, Pane container) {
 		mapX = x;
 		mapY = y;
 		generateMap(level, container);
 	}
 
-	public static int[][] getLevelArray() {
+	public Backend(String mapName) {
+		loadMap(mapName);
+	}
+
+	public int[][] getLevelArray() {
 		return levelArray;
 	}
 
-	public static int[][] getLevelArrayDynamic() {
+	public int[][] getLevelArrayDynamic() {
 		int[][] returnArray = new int[mapX][mapY];
 		for (int i = 0; i < mapX; i++) {
 			for (int j = 0; j < mapY; j++) {
 				if (levelArray[i][j] == TARGET) {
-					if(levelArrayDynamic[i][j] == PLAYER) {
+					if (levelArrayDynamic[i][j] == PLAYER) {
 						returnArray[i][j] = PLAYER_ON_TARGET;
-					} else if(levelArrayDynamic[i][j] == BOX) {
+					} else if (levelArrayDynamic[i][j] == BOX) {
 						returnArray[i][j] = BOX_ON_TARGET;
 					} else {
 						returnArray[i][j] = TARGET;
 					}
-				} else if(levelArrayDynamic[i][j] == PLAYER || levelArrayDynamic[i][j] == BOX) {
+				} else if (levelArrayDynamic[i][j] == PLAYER || levelArrayDynamic[i][j] == BOX) {
 					returnArray[i][j] = levelArrayDynamic[i][j];
-				} else if(levelArray[i][j] == PLAYER || levelArray[i][j] == BOX) {
+				} else if (levelArray[i][j] == PLAYER || levelArray[i][j] == BOX) {
 					returnArray[i][j] = levelArrayDynamic[i][j];
 				} else {
 					returnArray[i][j] = levelArray[i][j];
@@ -66,6 +84,139 @@ public class Backend {
 			}
 		}
 		return returnArray;
+	}
+
+	// 保存地图到本地
+	public boolean saveMap(String mapName) {
+		try {
+			// 确保保存目录存在
+			Files.createDirectories(Paths.get(SAVE_DIR));
+
+			// 1. 创建可序列化的数据结构
+			int[][] staticMapCopy = new int[mapX][mapY];
+			int[][] dynamicMapCopy = new int[mapX][mapY];
+
+			// 2. 进行深拷贝并验证数据
+			for (int i = 0; i < mapX; i++) {
+				for (int j = 0; j < mapY; j++) {
+					staticMapCopy[i][j] = levelArray[i][j];
+					dynamicMapCopy[i][j] = levelArrayDynamic[i][j];
+
+					// 验证是否有数据
+					if (staticMapCopy[i][j] != 0 || dynamicMapCopy[i][j] != 0) {
+						System.out.println("Found non-zero data at [" + i + "][" + j + "]");
+					}
+				}
+			}
+
+			// 3. 创建新的HashMap并存入深拷贝的数据
+			Map<String, Serializable> mapData = new HashMap<>();
+			mapData.put("staticMap", staticMapCopy);
+			mapData.put("dynamicMap", dynamicMapCopy);
+			mapData.put("mapX", Integer.valueOf(mapX));
+			mapData.put("mapY", Integer.valueOf(mapY));
+
+			validateMapData(mapData);
+
+			// 保存到文件
+			String filePath = SAVE_DIR + File.separator + mapName + "\\|" + new Date().getTime() + ".map";
+			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+				oos.writeObject(mapData);
+				oos.flush();
+			}
+			System.out.println("地图已保存: " + filePath);
+			return true;
+		} catch (IOException e) {
+			System.err.println("保存地图失败: " + e.getMessage());
+			return false;
+		}
+	}
+
+	private void validateMapData(Map<String, Serializable> mapData) {
+		int[][] staticMap = (int[][]) mapData.get("staticMap");
+		int[][] dynamicMap = (int[][]) mapData.get("dynamicMap");
+
+		System.out.println("Validating map data before save:");
+		System.out.println("Static map:");
+		printArray(staticMap);
+		System.out.println("Dynamic map:");
+		printArray(dynamicMap);
+	}
+
+	private void printArray(int[][] array) {
+		for (int i = 0; i < array.length; i++) {
+			for (int j = 0; j < array[i].length; j++) {
+				System.out.print(array[i][j] + " ");
+			}
+			System.out.println();
+		}
+	}
+
+	// 列出所有已保存的地图
+	public static List<String> listSavedMaps() {
+		List<String> mapNames = new ArrayList<>();
+		try {
+			Files.createDirectories(Paths.get(SAVE_DIR));
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(SAVE_DIR), "*.map")) {
+				for (Path path : stream) {
+					String fileName = path.getFileName().toString();
+					mapNames.add(fileName.substring(0, fileName.length() - 4)); // 移除.map后缀
+				}
+			}
+		} catch (IOException e) {
+			System.err.println("读取保存的地图列表失败: " + e.getMessage());
+		}
+		return mapNames;
+	}
+
+	// 从本地加载地图
+	@SuppressWarnings("unchecked")
+	public boolean loadMap(String mapName) {
+		String filePath = SAVE_DIR + File.separator + mapName + ".map";
+		System.out.println("Loading map: " + filePath);
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+			Map<String, Object> mapData = (Map<String, Object>) ois.readObject();
+
+			// 恢复地图状态
+			int[][] dynamicMap = (int[][]) mapData.get("dynamicMap");
+			int[][] staticMap = (int[][]) mapData.get("staticMap");
+
+			proceedSaveData(dynamicMap, staticMap);
+
+			System.out.println("Loading static map:");
+			printArray(staticMap);
+
+			System.out.println("Loading dynamic map:");
+			printArray(dynamicMap);
+
+			mapX = (int) mapData.get("mapX");
+			mapY = (int) mapData.get("mapY");
+
+			System.out.println("Map size: " + mapX + "x" + mapY);
+			// 打印读取到的地图
+			int[][] combinedMap = getLevelArrayDynamic();
+			for (int y = 0; y < mapY; y++) {
+				for (int x = 0; x < mapX; x++) {
+					System.out.print(combinedMap[x][y] + " ");
+				}
+				System.out.println();
+			}
+
+			System.out.println("地图已加载: " + mapName);
+			return true;
+		} catch (IOException | ClassNotFoundException e) {
+			System.err.println("加载地图失败: " + e.getMessage());
+			return false;
+		}
+	}
+
+	// 检查地图是否存在
+	public boolean mapExists(String mapName) {
+		return Files.exists(Paths.get(SAVE_DIR, mapName + ".map"));
+	}
+
+	public void reMakeImage(Level level, Pane container) {
+		loadLevel(level, container);
 	}
 
 	public static StaticShape[][] getLevel() {
@@ -76,11 +227,32 @@ public class Backend {
 		return levelShape[(int) x][(int) y];
 	}
 
+	private void proceedSaveData(int[][] dynamicMap, int[][] staticMap) {
+		for (int y = 0; y < mapY; y++) {
+			for (int x = 0; x < mapX; x++) {
+				if (dynamicMap[x][y] >= 5) {
+					this.levelArrayDynamic[x][y] = dynamicMap[x][y] - 3;
+				} else {
+					levelArrayDynamic[x][y] = dynamicMap[x][y];
+				}
+				levelArray[x][y] = staticMap[x][y];
+			}
+		}
+	}
+
 	public void generateMap(Level level, Pane container) {
 		MapGenerator mapGenerator = new MapGenerator();
 		mapGenerator.mapMake();
-		levelArray = mapGenerator.getMap();
-		levelArrayDynamic = mapGenerator.getMap();
+		// 深拷贝数组
+		int[][] originalMap = mapGenerator.getMap();
+		levelArray = new int[mapX][mapY];
+		levelArrayDynamic = new int[mapX][mapY];
+
+		// 分别复制数据
+		for (int i = 0; i < mapX; i++) {
+			levelArray[i] = Arrays.copyOf(originalMap[i], mapY);
+			levelArrayDynamic[i] = Arrays.copyOf(originalMap[i], mapY);
+		}
 		cleanShape();
 		loadLevel(level, container);
 	}
@@ -93,9 +265,9 @@ public class Backend {
 	public void loadLevel(Level level, Pane container) {
 		for (int y = 0; y < mapY; y++) {
 			for (int x = 0; x < mapX; x++) {
-				int n = levelArray[x][y];
+				int m = levelArrayDynamic[x][y];
 				// 检查是否是直接继承StaticShape
-				switch (n) {
+				switch (m) {
 					case EMPTY:
 						levelShape[x][y] = new Empty(x, y);
 						break;
@@ -114,6 +286,17 @@ public class Backend {
 						levelShape[x][y] = new Empty(x, y);
 						break;
 					case TARGET:
+						levelShape[x][y] = new Target(x, y);
+						break;
+					case PLAYER_ON_TARGET:
+						player = new Player(x, y, level, container);
+						dynamicShapes.add(player);
+						levelShape[x][y] = new Target(x, y);
+						levelDynamicShapes[x][y] = player;
+						break;
+					case BOX_ON_TARGET:
+						levelDynamicShapes[x][y] = new Box(x, y, level, container);
+						dynamicShapes.add(levelDynamicShapes[x][y]);
 						levelShape[x][y] = new Target(x, y);
 						break;
 					default:

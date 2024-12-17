@@ -3,8 +3,10 @@ package com.sokoban.controllers;
 import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -16,6 +18,9 @@ import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import java.io.IOException;
+
+import com.sokoban.ui.SaveController;
 
 public class SokobanGame extends Application {
 
@@ -30,13 +35,19 @@ public class SokobanGame extends Application {
 
 	private Label lblTimer = new Label("00:00");
 	private AnimationTimer timer;
-	private static final Font BIGGER_FONT = new Font("Arial", 30);
+	private static final Font BIGGER_FONT = new Font("Consolas", 30);
 	private boolean hasStartedMoving = false; // 标记玩家是否已开始移动
 	private int currentLevelIndex = 0; // 跟踪当前关卡索引
 	private Label lblStepCount = new Label("Steps: 0"); // 步数标签
 	public int stepCount = 0; // 记录步数
 
-	Backend map;
+	private Thread aiThread;
+
+	private volatile boolean stopAI = false;
+
+	private Backend map;
+
+	private boolean mapSet = false;
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -86,6 +97,12 @@ public class SokobanGame extends Application {
 			}
 		});
 		buttonContainer.getChildren().add(redoButton);
+		// 添加保存按钮
+		Button saveButton = new Button("Save");
+		saveButton.setOnAction(event -> {
+			saveButton(saveButton);
+		});
+		buttonContainer.getChildren().add(saveButton);
 
 		// 创建带有图标的按钮
 		Button upButton = createImageButton("/arrows/arrowUp.png", "↑");
@@ -117,7 +134,6 @@ public class SokobanGame extends Application {
 		rightButton.setOnMouseClicked(event -> handleKeyPress('D', primaryStage));
 
 		// 添加方向按钮事件监听器（保持原有的键盘事件监听器）
-
 		scene.setOnKeyPressed(event -> {
 			KeyCode keyCode = event.getCode();
 			if (!hasStartedMoving) { // 如果玩家还没有开始移动，则启动计时器
@@ -155,7 +171,11 @@ public class SokobanGame extends Application {
 		root.setBottom(bottomContainer);
 
 		// 默认加载第一关
-		loadLevel(0);
+		if (!mapSet) {
+			loadLevel(0);
+		} else {
+			loadLevel(map);
+		}
 
 		scene.setOnKeyPressed(event -> {
 			KeyCode keyCode = event.getCode();
@@ -185,9 +205,19 @@ public class SokobanGame extends Application {
 	}
 
 	private void loadLevel(int levelIndex) {
+		stopAI();
 		this.currentLevelIndex = levelIndex; // 更新当前关卡索引
 		map = level.createLevel(levelIndex);
 		hasStartedMoving = false; // 当加载新关卡时重置移动状态
+		stopTimer(); // 确保停止任何正在运行的计时器
+		resetStepCount();
+	}
+
+	private void loadLevel(Backend map) {
+		stopAI();
+		hasStartedMoving = false; // 当加载新关卡时重置移动状态
+		this.map = map;
+		level.loadLevel(map);
 		stopTimer(); // 确保停止任何正在运行的计时器
 		resetStepCount();
 	}
@@ -246,6 +276,30 @@ public class SokobanGame extends Application {
 		Platform.runLater(() -> lblStepCount.setText("Steps: " + level.stepnum)); // 确保在JavaFX应用程序线程上更新UI
 	}
 
+	private void saveButton(Button button) {
+		try {
+			// 1. 创建加载器
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/SaveView.fxml"));
+
+			// 2. 加载FXML
+			Parent root = loader.load();
+
+			// 3. 获取控制器并设置数据
+			SaveController controller = loader.getController();
+			controller.setMap(map);
+
+			// 4. 创建并显示窗口
+			Stage stage = new Stage();
+			stage.setTitle("保存游戏");
+			stage.initModality(Modality.APPLICATION_MODAL); // 设置为模态窗口
+			stage.setScene(new Scene(root));
+			stage.show();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Error loading FXML: " + e.getMessage());
+		}
+	}
+
 	private void showVictoryDialog(Stage ownerstage) {
 		// 创建新的Stage作为对话框
 		Stage dialogStage = new Stage();
@@ -294,24 +348,65 @@ public class SokobanGame extends Application {
 
 	private void aiSolve(Stage primaryStage) {
 		stopTimer();
-		resetTimer();
-		hasStartedMoving = true;
-		new Thread(() -> {
-			System.out.println("Solving level " + (currentLevelIndex + 1));
-			SokobanSolver solver = new SokobanSolver();
-			String solution = solver.solve(Backend.getLevelArrayDynamic());
-			System.out.println("Solution: " + solution);
-			resetStepCount();
-			for (char c : solution.toCharArray()) {
-				handleKeyPress(c, primaryStage);
-				try {
-					Thread.sleep(200); // 等待200毫秒以便观察动画
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+		stopAI();
+		stopAI = false;
+		aiThread = new Thread(() -> {
+			try {
+				while (!stopAI) {
+					// 检查中断状态
+					if (Thread.interrupted()) {
+						throw new InterruptedException();
+					}
+					hasStartedMoving = true;
+					System.out.println("Solving level " + (currentLevelIndex + 1));
+					SokobanSolver solver = new SokobanSolver();
+					String solution = solver.solve(map.getLevelArrayDynamic());
+					System.out.println("Solution: " + solution);
+					resetStepCount();
+					for (char c : solution.toCharArray()) {
+						if (Thread.interrupted()) {
+							throw new InterruptedException();
+						}
+						if (stopAI) {
+							break;
+						}
+						handleKeyPress(c, primaryStage);
+						try {
+							Thread.sleep(200); // 等待200毫秒以便观察动画
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					stopAI = true;
+					if (stopAI) {
+						break;
+					}
 				}
+			} catch (InterruptedException e) {
+				// 处理中断
+				System.out.println("AI solving interrupted");
+			} finally {
+				// 清理资源
+				stopAI = true;
 			}
-		}).start();
-		stopTimer();
+		});
+		aiThread.start();
+	}
+
+	// 停止AI
+	private void stopAI() {
+		if (aiThread != null && aiThread.isAlive()) {
+			stopAI = true; // 设置停止标志
+			aiThread.interrupt(); // 发送中断信号
+			try {
+				aiThread.join(1000); // 等待线程结束,最多1秒
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if (aiThread.isAlive()) {
+				System.out.println("AI thread still running");
+			}
+		}
 	}
 
 	private void handleKeyPress(char keyCode, Stage primaryStage) {
@@ -348,7 +443,17 @@ public class SokobanGame extends Application {
 			System.out.println("Level ended");
 			stopTimer();
 			hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			showVictoryDialog(primaryStage);
 		}
+	}
+
+	public void setMap(Backend map) {
+		this.map = map;
+		this.mapSet = true;
 	}
 }

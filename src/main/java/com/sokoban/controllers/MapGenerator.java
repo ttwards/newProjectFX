@@ -50,8 +50,7 @@ public class MapGenerator {
 				int newX = curr[0] + dir[0];
 				int newY = curr[1] + dir[1];
 
-				if (newX >= 0 && newX < H && newY >= 0 && newY < L
-						&& !visited[newX][newY] && map[newX][newY] != WALL) {
+				if (isValidMove(visited, map, newX, newY)) {
 					if (newX == endX && newY == endY)
 						return true;
 					queue.offer(new int[] { newX, newY });
@@ -75,7 +74,20 @@ public class MapGenerator {
 		return spaces;
 	}
 
-	private boolean isValidMove(boolean visited[][], )
+	private boolean isValidMove(boolean visited[][], int map[][], int newX, int newY) {
+		if (newX < 0 || newX >= H || newY < 0 || newY >= L
+				|| visited[newX][newY] || map[newX][newY] == WALL) {
+			return false;
+		} else {
+			int wallCount = 0;
+			if (newX > 0 && map[newX - 1][newY] == WALL) wallCount++;
+			if (newX < H - 1 && map[newX + 1][newY] == WALL) wallCount++;
+			if (newY > 0 && map[newX][newY - 1] == WALL) wallCount++;
+			if (newY < L - 1 && map[newX][newY + 1] == WALL) wallCount++;
+			if(wallCount != 0) return false;
+		}
+		return true;
+	}
 
 	// 验证箱子位置的合法性
 	private boolean isValidBoxPosition(int x, int y) {
@@ -135,6 +147,7 @@ public class MapGenerator {
 		for (int i = 0; i < boxCount; i++) {
 			if (emptySpaces.isEmpty()) {
 				System.out.println("Not enough space for boxes!");
+				mapMake();
 				return;
 			}
 
@@ -155,6 +168,7 @@ public class MapGenerator {
 
 			if (!placed) {
 				System.out.println("Failed to place all boxes!");
+				mapMake();
 				return;
 			}
 		}
@@ -164,6 +178,7 @@ public class MapGenerator {
 		for (int i = 0; i < boxCount; i++) {
 			if (emptySpaces.isEmpty()) {
 				System.out.println("Not enough space for targets!");
+				mapMake();
 				return;
 			}
 
@@ -193,6 +208,7 @@ public class MapGenerator {
 
 			if (!placed) {
 				System.out.println("Failed to place all targets!");
+				mapMake();
 				return;
 			}
 		}
@@ -201,6 +217,7 @@ public class MapGenerator {
 		boolean isValid = validateMap(playerX, playerY, boxes, targets);
 		if (!isValid) {
 			System.out.println("Generated map is not solvable!");
+			mapMake();
 			return;
 		}
 

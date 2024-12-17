@@ -1,283 +1,289 @@
 package com.sokoban.controllers;
 
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 public class SokobanSolver {
-	// 定义方向: 上, 左, 下, 右
-	private static final int[][] DIRECTIONS = {
-			{ -1, 0 }, // W - 上
-			{ 0, -1 }, // A - 左
-			{ 1, 0 }, // S - 下
-			{ 0, 1 } // D - 右
-	};
-	private static final char[] DIR_NAMES = { 'A', 'W', 'D', 'S' };
+    private static final int[][] DIRECTIONS = {
+            {-1, 0}, // W - 上
+            {0, -1}, // A - 左
+            {1, 0},  // S - 下
+            {0, 1}   // D - 右
+    };
+    private static final char[] DIR_NAMES = {'A', 'W', 'D', 'S'};
+    private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
+    
+    private final ExecutorService executor;
+    private final ConcurrentHashMap<State, Boolean> globalClosed;
+    private final AtomicBoolean solutionFound;
+    private final AtomicInteger totalNodes;
+    private volatile String bestSolution;
+    private volatile int bestSolutionLength;
 
-	// 状态类
-	static class State {
-		int playerX, playerY;
-		Set<String> boxes;
-		String path;
+    public SokobanSolver() {
+        this.executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        this.globalClosed = new ConcurrentHashMap<>();
+        this.solutionFound = new AtomicBoolean(false);
+        this.totalNodes = new AtomicInteger(0);
+        this.bestSolution = "";
+        this.bestSolutionLength = Integer.MAX_VALUE;
+    }
 
-		State(int playerX, int playerY, Set<String> boxes, String path) {
-			this.playerX = playerX;
-			this.playerY = playerY;
-			this.boxes = new HashSet<>(boxes);
-			this.path = path;
-		}
+    static class State {
+        int playerX, playerY;
+        Set<String> boxes;
+        String path;
 
-		@Override
-		public int hashCode() {
-			return Objects.hash(playerX, playerY, boxes.hashCode());
-		}
+        State(int playerX, int playerY, Set<String> boxes, String path) {
+            this.playerX = playerX;
+            this.playerY = playerY;
+            this.boxes = new HashSet<>(boxes);
+            this.path = path;
+        }
 
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof State))
-				return false;
-			State other = (State) obj;
-			return this.playerX == other.playerX &&
-					this.playerY == other.playerY &&
-					this.boxes.equals(other.boxes);
-		}
+        @Override
+        public int hashCode() {
+            return Objects.hash(playerX, playerY, boxes.hashCode());
+        }
 
-		// 创建状态的字符串表示，用于调试
-		@Override
-		public String toString() {
-			return String.format("Player(%d,%d), Boxes: %s, Path: %s",
-					playerX, playerY, boxes.toString(), path);
-		}
-	}
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof State)) return false;
+            State other = (State) obj;
+            return this.playerX == other.playerX &&
+                   this.playerY == other.playerY &&
+                   this.boxes.equals(other.boxes);
+        }
+    }
 
-	public String solve(int[][] grid) {
-		long startTime = System.currentTimeMillis();
-		int numNodes = 0;
+    public String solve(int[][] grid) {
+        long startTime = System.currentTimeMillis();
+        
+        // 解析初始状态
+        Set<String> boxes = new HashSet<>();
+        Set<String> goals = new HashSet<>();
+        int playerX = -1, playerY = -1;
 
-		int rows = grid.length;
-		int cols = grid[0].length;
-
-		// 解析初始状态
-		Set<String> boxes = new HashSet<>();
-		Set<String> goals = new HashSet<>();
-		int playerX = -1, playerY = -1;
-
-		// 输出地图
-		System.out.println("地图:");
+		// 打印地图
 		for (int[] row : grid) {
-			System.out.println(Arrays.toString(row));
-		}
-
-		// 解析地图
-		for (int y = 0; y < rows; y++) {
-			for (int x = 0; x < cols; x++) {
-				switch (grid[y][x]) {
-					case 2: // 玩家
-						playerX = y;
-						playerY = x;
-						break;
-					case 3: // 箱子
-						boxes.add(y + "," + x);
-						break;
-					case 4: // 目标
-						goals.add(y + "," + x);
-						break;
-					case 5: // 玩家在目标点
-						playerX = y;
-						playerY = x;
-						goals.add(y + "," + x);
-						break;
-					case 6: // 箱子在目标点
-						boxes.add(y + "," + x);
-						goals.add(y + "," + x);
-						break;
-				}
+			for (int cell : row) {
+				System.out.print(cell + " ");
 			}
+			System.out.println();
 		}
 
-		// 验证初始状态
-		if (playerX == -1 || playerY == -1 || boxes.isEmpty() || goals.isEmpty()) {
-			System.out.println("无效的初始状态");
-			return "";
-		}
+        // 解析地图
+        int rows = grid.length;
+        int cols = grid[0].length;
+        
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                switch (grid[y][x]) {
+                    case 2: playerX = y; playerY = x; break;
+                    case 3: boxes.add(y + "," + x); break;
+                    case 4: goals.add(y + "," + x); break;
+                    case 5: playerX = y; playerY = x; goals.add(y + "," + x); break;
+                    case 6: boxes.add(y + "," + x); goals.add(y + "," + x); break;
+                }
+            }
+        }
 
-		// 使用A*算法
-		PriorityQueue<State> open = new PriorityQueue<>((a, b) -> {
-			int fa = a.path.length() + manhattanDistance(a.boxes, goals);
-			int fb = b.path.length() + manhattanDistance(b.boxes, goals);
-			return Integer.compare(fa, fb);
-		});
+        if (playerX == -1 || boxes.isEmpty() || goals.isEmpty()) {
+            return "";
+        }
 
-		State initialState = new State(playerX, playerY, boxes, "");
-		open.add(initialState);
-		Set<State> closed = new HashSet<>();
+        // 创建初始状态
+        State initialState = new State(playerX, playerY, boxes, "");
+        
+        // 创建并启动多个搜索线程
+        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            final int threadId = i;
+            executor.submit(() -> {
+                try {
+                    searchSolution(grid, initialState, goals, threadId);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
 
-		while (!open.isEmpty()) {
-			State current = open.poll();
-			numNodes++;
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
-			if (isGoalState(current.boxes, goals)) {
-				long endTime = System.currentTimeMillis();
-				System.out.printf("找到解决方案!\n路径: %s\n步数: %d\n耗时: %d ms\n探索节点数: %d\n",
-						current.path, current.path.length(), endTime - startTime, numNodes);
-				return current.path;
-			}
+        executor.shutdown();
+        try {
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
-			if (closed.contains(current)) {
-				continue;
-			}
-			closed.add(current);
+        long endTime = System.currentTimeMillis();
+        if (!bestSolution.isEmpty()) {
+            System.out.printf("找到解决方案!\n路径: %s\n步数: %d\n耗时: %d ms\n探索节点数: %d\n",
+                    bestSolution, bestSolution.length(), endTime - startTime, totalNodes.get());
+        } else {
+            System.out.printf("未找到解决方案\n耗时: %d ms\n探索节点数: %d\n",
+                    endTime - startTime, totalNodes.get());
+        }
 
-			// 尝试四个方向
-			for (int dir = 0; dir < 4; dir++) {
-				int newPlayerX = current.playerX + DIRECTIONS[dir][0];
-				int newPlayerY = current.playerY + DIRECTIONS[dir][1];
+        return bestSolution;
+    }
 
-				// 检查移动是否有效
-				if (!isValidPosition(newPlayerX, newPlayerY, grid)) {
-					continue;
-				}
+    private void searchSolution(int[][] grid, State initialState, Set<String> goals, int threadId) {
+        PriorityQueue<State> open = new PriorityQueue<>((a, b) -> {
+            int fa = a.path.length() + manhattanDistance(a.boxes, goals);
+            int fb = b.path.length() + manhattanDistance(b.boxes, goals);
+            return Integer.compare(fa, fb);
+        });
 
-				// 检查新位置
-				String newPos = newPlayerX + "," + newPlayerY;
-				Set<String> newBoxes = new HashSet<>(current.boxes);
+        open.add(initialState);
 
-				if (newBoxes.contains(newPos)) {
-					// 尝试推箱子
-					int newBoxX = newPlayerX + DIRECTIONS[dir][0];
-					int newBoxY = newPlayerY + DIRECTIONS[dir][1];
+        while (!open.isEmpty() && !solutionFound.get()) {
+            State current = open.poll();
+            totalNodes.incrementAndGet();
 
-					if (!isValidBoxMove(newBoxX, newBoxY, grid, newBoxes, goals)) {
-						continue;
-					}
+            if (isGoalState(current.boxes, goals)) {
+                if (current.path.length() < bestSolutionLength) {
+                    synchronized (this) {
+                        if (current.path.length() < bestSolutionLength) {
+                            bestSolution = current.path;
+                            bestSolutionLength = current.path.length();
+                            solutionFound.set(true);
+                        }
+                    }
+                }
+                return;
+            }
 
-					// 移动箱子
-					newBoxes.remove(newPos);
-					newBoxes.add(newBoxX + "," + newBoxY);
+            if (globalClosed.putIfAbsent(current, Boolean.TRUE) != null) {
+                continue;
+            }
 
-					// 检查死锁
-					if (isDeadlock(newBoxX, newBoxY, grid, goals, newBoxes)) {
-						continue;
-					}
-				}
+            // 基于线程ID选择不同的遍历顺序
+            for (int i = 0; i < 4; i++) {
+                int dir = (i + threadId) % 4;
+                exploreDirection(grid, current, dir, goals, open);
+            }
+        }
+    }
 
-				// 创建新状态
-				State newState = new State(newPlayerX, newPlayerY, newBoxes,
-						current.path + DIR_NAMES[dir]);
+    private void exploreDirection(int[][] grid, State current, int dir, Set<String> goals, PriorityQueue<State> open) {
+        int newPlayerX = current.playerX + DIRECTIONS[dir][0];
+        int newPlayerY = current.playerY + DIRECTIONS[dir][1];
 
-				if (!closed.contains(newState)) {
-					open.add(newState);
-				}
-			}
-		}
+        if (!isValidPosition(newPlayerX, newPlayerY, grid)) {
+            return;
+        }
 
-		long endTime = System.currentTimeMillis();
-		System.out.printf("未找到解决方案\n耗时: %d ms\n探索节点数: %d\n",
-				endTime - startTime, numNodes);
-		return "";
-	}
+        String newPos = newPlayerX + "," + newPlayerY;
+        Set<String> newBoxes = new HashSet<>(current.boxes);
 
-	private boolean isValidPosition(int x, int y, int[][] grid) {
-		return x >= 0 && x < grid.length && y >= 0 && y < grid[0].length && grid[x][y] != 1;
-	}
+        if (newBoxes.contains(newPos)) {
+            int newBoxX = newPlayerX + DIRECTIONS[dir][0];
+            int newBoxY = newPlayerY + DIRECTIONS[dir][1];
 
-	private boolean isValidBoxMove(int x, int y, int[][] grid, Set<String> boxes, Set<String> goals) {
-		if (!isValidPosition(x, y, grid))
-			return false;
-		String pos = x + "," + y;
-		return !boxes.contains(pos);
-	}
+            if (!isValidBoxMove(newBoxX, newBoxY, grid, newBoxes, goals)) {
+                return;
+            }
 
-	private boolean isGoalState(Set<String> boxes, Set<String> goals) {
-		return boxes.equals(goals);
-	}
+            newBoxes.remove(newPos);
+            newBoxes.add(newBoxX + "," + newBoxY);
 
-	private int manhattanDistance(Set<String> boxes, Set<String> goals) {
-		int totalDistance = 0;
-		for (String box : boxes) {
-			String[] boxCoord = box.split(",");
-			int boxX = Integer.parseInt(boxCoord[0]);
-			int boxY = Integer.parseInt(boxCoord[1]);
+            if (isDeadlock(newBoxX, newBoxY, grid, goals, newBoxes)) {
+                return;
+            }
+        }
 
-			int minDist = Integer.MAX_VALUE;
-			for (String goal : goals) {
-				String[] goalCoord = goal.split(",");
-				int goalX = Integer.parseInt(goalCoord[0]);
-				int goalY = Integer.parseInt(goalCoord[1]);
+        State newState = new State(newPlayerX, newPlayerY, newBoxes,
+                current.path + DIR_NAMES[dir]);
 
-				int dist = Math.abs(boxX - goalX) + Math.abs(boxY - goalY);
-				minDist = Math.min(minDist, dist);
-			}
-			totalDistance += minDist;
-		}
-		return totalDistance;
-	}
+        if (!globalClosed.containsKey(newState)) {
+            open.add(newState);
+        }
+    }
 
-	private boolean isDeadlock(int x, int y, int[][] grid, Set<String> goals, Set<String> boxes) {
-		// 如果箱子在目标点上，不是死锁
-		if (goals.contains(x + "," + y)) {
-			return false;
-		}
+    // 保持原有的辅助方法不变
+    private boolean isValidPosition(int x, int y, int[][] grid) {
+        return x >= 0 && x < grid.length && y >= 0 && y < grid[0].length && grid[x][y] != 1;
+    }
 
-		// 检查角落死锁
-		boolean isCornerDeadlock = checkCornerDeadlock(x, y, grid, boxes);
-		if (isCornerDeadlock) {
-			return true;
-		}
+    private boolean isValidBoxMove(int x, int y, int[][] grid, Set<String> boxes, Set<String> goals) {
+        if (!isValidPosition(x, y, grid)) return false;
+        String pos = x + "," + y;
+        return !boxes.contains(pos);
+    }
 
-		// 检查边缘死锁
-		boolean isEdgeDeadlock = checkEdgeDeadlock(x, y, grid, boxes, goals);
-		if (isEdgeDeadlock) {
-			return true;
-		}
+    private boolean isGoalState(Set<String> boxes, Set<String> goals) {
+        return boxes.equals(goals);
+    }
 
-		return false;
-	}
+    private int manhattanDistance(Set<String> boxes, Set<String> goals) {
+        int totalDistance = 0;
+        for (String box : boxes) {
+            String[] boxCoord = box.split(",");
+            int boxX = Integer.parseInt(boxCoord[0]);
+            int boxY = Integer.parseInt(boxCoord[1]);
 
-	private boolean checkCornerDeadlock(int x, int y, int[][] grid, Set<String> boxes) {
-		// 检查四个角落
-		boolean[][] corners = {
-				{ isBlocked(x - 1, y, grid, boxes), isBlocked(x, y - 1, grid, boxes) }, // 左上
-				{ isBlocked(x - 1, y, grid, boxes), isBlocked(x, y + 1, grid, boxes) }, // 右上
-				{ isBlocked(x + 1, y, grid, boxes), isBlocked(x, y - 1, grid, boxes) }, // 左下
-				{ isBlocked(x + 1, y, grid, boxes), isBlocked(x, y + 1, grid, boxes) } // 右下
-		};
+            int minDist = Integer.MAX_VALUE;
+            for (String goal : goals) {
+                String[] goalCoord = goal.split(",");
+                int goalX = Integer.parseInt(goalCoord[0]);
+                int goalY = Integer.parseInt(goalCoord[1]);
+                int dist = Math.abs(boxX - goalX) + Math.abs(boxY - goalY);
+                minDist = Math.min(minDist, dist);
+            }
+            totalDistance += minDist;
+        }
+        return totalDistance;
+    }
 
-		for (boolean[] corner : corners) {
-			if (corner[0] && corner[1]) {
-				return true;
-			}
-		}
-		return false;
-	}
+    private boolean isDeadlock(int x, int y, int[][] grid, Set<String> goals, Set<String> boxes) {
+        if (goals.contains(x + "," + y)) return false;
+        return checkCornerDeadlock(x, y, grid, boxes) || 
+               checkEdgeDeadlock(x, y, grid, boxes, goals);
+    }
 
-	private boolean checkEdgeDeadlock(int x, int y, int[][] grid, Set<String> boxes, Set<String> goals) {
-		// 检查箱子是否被卡在墙边
-		boolean horizontalBlocked = isBlocked(x, y - 1, grid, boxes) &&
-				isBlocked(x, y + 1, grid, boxes);
-		boolean verticalBlocked = isBlocked(x - 1, y, grid, boxes) &&
-				isBlocked(x + 1, y, grid, boxes);
+    private boolean checkCornerDeadlock(int x, int y, int[][] grid, Set<String> boxes) {
+        boolean[][] corners = {
+            {isBlocked(x-1, y, grid, boxes), isBlocked(x, y-1, grid, boxes)},
+            {isBlocked(x-1, y, grid, boxes), isBlocked(x, y+1, grid, boxes)},
+            {isBlocked(x+1, y, grid, boxes), isBlocked(x, y-1, grid, boxes)},
+            {isBlocked(x+1, y, grid, boxes), isBlocked(x, y+1, grid, boxes)}
+        };
 
-		if (horizontalBlocked || verticalBlocked) {
-			// 检查该位置是否有通向目标的路径
-			for (String goal : goals) {
-				String[] coords = goal.split(",");
-				int goalX = Integer.parseInt(coords[0]);
-				int goalY = Integer.parseInt(coords[1]);
+        for (boolean[] corner : corners) {
+            if (corner[0] && corner[1]) return true;
+        }
+        return false;
+    }
 
-				if (horizontalBlocked && x == goalX) {
-					return false;
-				}
-				if (verticalBlocked && y == goalY) {
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
-	}
+    private boolean checkEdgeDeadlock(int x, int y, int[][] grid, Set<String> boxes, Set<String> goals) {
+        boolean horizontalBlocked = isBlocked(x, y-1, grid, boxes) && 
+                                  isBlocked(x, y+1, grid, boxes);
+        boolean verticalBlocked = isBlocked(x-1, y, grid, boxes) && 
+                                 isBlocked(x+1, y, grid, boxes);
 
-	private boolean isBlocked(int x, int y, int[][] grid, Set<String> boxes) {
-		if (!isValidPosition(x, y, grid))
-			return true;
-		return boxes.contains(x + "," + y) || grid[x][y] == 1;
-	}
+        if (horizontalBlocked || verticalBlocked) {
+            for (String goal : goals) {
+                String[] coords = goal.split(",");
+                int goalX = Integer.parseInt(coords[0]);
+                int goalY = Integer.parseInt(coords[1]);
+
+                if (horizontalBlocked && x == goalX) return false;
+                if (verticalBlocked && y == goalY) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isBlocked(int x, int y, int[][] grid, Set<String> boxes) {
+        if (!isValidPosition(x, y, grid)) return true;
+        return boxes.contains(x + "," + y) || grid[x][y] == 1;
+    }
 }

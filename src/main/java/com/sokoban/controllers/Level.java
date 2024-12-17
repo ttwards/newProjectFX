@@ -9,7 +9,7 @@ public class Level {
     private int currentLevelIndex = 0; // 当前关卡索引
     private Pane root; // 游戏场景根节点
 
-	private static Backend map;
+	private Backend map;
 
     public Level(Pane root) {
         this.root = root;
@@ -67,6 +67,35 @@ public class Level {
         }
 		return map;
     }
+
+	public void loadLevel(Backend map) {
+		// 清空当前场景
+		clearGraph();
+
+		map.reMakeImage(this, root);
+
+		this.map = map;
+
+		System.out.println("Loading level " + (currentLevelIndex));
+
+		StaticShape[][] staticShapes = Backend.getLevel();
+		for (int y = 0; y < staticShapes.length; y++) {
+			for (int x = 0; x < staticShapes[y].length; x++) {
+				StaticShape shape = staticShapes[x][y];
+				if (shape != null) {
+					root.getChildren().add(shape.getImageView());
+					System.out.println("Picture at x: " + shape.getX() + ", y: " + shape.getY() + " path: " + shape.imagePath);
+				}
+			}
+		}
+
+		// 保证DynamicShape在静态对象之上
+		DynamicShape dynamicShapes[] = map.getDynamicShapes();
+        for(DynamicShape shape : dynamicShapes) {
+            root.getChildren().add(shape.getImageView());
+			System.out.println("Adding dynamic shape at " + shape.getX() + ", " + shape.getY());
+        }
+	}
 
     public boolean gameEnd() {
 		DynamicShape dynamicShapes[] = map.getDynamicShapes();

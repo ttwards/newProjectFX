@@ -5,7 +5,7 @@ module com.sokoban {
     requires static lombok;
 
 
-	opens com.sokoban.ui to javafx.fxml;
+	opens com.sokoban.ui to javafx.base, javafx.fxml;
     opens com.sokoban.controllers to javafx.fxml;
     exports com.sokoban.controllers to javafx.graphics;
 	exports com.sokoban.ui to javafx.graphics;

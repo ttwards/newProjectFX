@@ -59,7 +59,7 @@ public class LevelSelector {
 
     @FXML
     public void levelSelect6(ActionEvent event) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/views/GameView.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/views/StorageSelect.fxml"));
         Stage stage = (Stage) level6Button.getScene().getWindow();
         stage.setScene(new Scene(root));
         stage.setUserData(6);
