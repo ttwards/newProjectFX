@@ -4,17 +4,24 @@ import javafx.scene.control.Alert;
 import javafx.scene.Scene;
 
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+
+import java.net.URL;
+import java.util.ResourceBundle;
 
 import com.sokoban.controllers.Backend;
 
-public class SaveController {
+public class SaveController implements Initializable {
 	@FXML private Button confirm;
 	@FXML private Button cancel;
 	@FXML private TextField nameBox;
 	
 	private Backend map;
+
+	private String name;
 
 	@FXML
 	private void handleConfirm() {
@@ -56,5 +63,15 @@ public class SaveController {
 
 	public void setMap(Backend map) {
 		this.map = map;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
+    public void initialize(URL location, ResourceBundle resources) {
+		// 设置列的单元格值工厂
+        nameBox.setText(name);
 	}
 }

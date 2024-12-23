@@ -20,6 +20,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.io.IOException;
 
+import com.sokoban.ui.LevelSelector;
 import com.sokoban.ui.SaveController;
 import com.sokoban.ui.User;
 
@@ -33,12 +34,15 @@ public class SokobanGame extends Application {
 	private long startTime = 0;
 
 	private Label lblTimer = new Label("00:00");
+	private Label lblLevel = new Label("");
 	private AnimationTimer timer;
 	private static final Font BIGGER_FONT = new Font("Consolas", 30);
 	private boolean hasStartedMoving = false; // 标记玩家是否已开始移动
 	private int currentLevelIndex = 0; // 跟踪当前关卡索引
 	private Label lblStepCount = new Label("Steps: 0"); // 步数标签
 	public int stepCount = 0; // 记录步数
+
+	private boolean congratulated = false;
 
 	private Thread aiThread;
 
@@ -53,11 +57,15 @@ public class SokobanGame extends Application {
 
 	private int afterVictory = 0;
 
+	private boolean reload = false;
+
+	private String name;
+
 	@Override
 	public void start(Stage primaryStage) {
 		// 创建主布局
 		BorderPane root = new BorderPane();
-		Scene scene = new Scene(root, 800, 600);
+		Scene scene = new Scene(root, 800, 700);
 
 		// 创建游戏区域
 		gamePane = new Pane();
@@ -71,19 +79,30 @@ public class SokobanGame extends Application {
 			user.updateLevel(1);
 		}
 
-		// 创建并配置五个按钮
-		for (int i = 0; i < 5; i++) {
-			final int levelIndex = i + 1; // 关卡索引从1开始
-			Button button = new Button("Level " + levelIndex);
-			button.setOnAction(event -> loadLevel(levelIndex));
-			buttonContainer.getChildren().add(button);
+		if (level != null) {
+			System.out.println("Clearing graph");
+			level.clearGraph();
 		}
 
-		if (user.getLevel() < 5) {
-			for (int i = user.getLevel(); i < 5; i++) {
-				buttonContainer.getChildren().get(i).setDisable(true);
-			}
-		}
+		// 添加选择关卡按钮
+		Button levelButton = new Button("Level");
+		levelButton.setOnAction(event -> {
+			levelSelect(levelButton);
+		});
+		buttonContainer.getChildren().add(levelButton); // 将AI求解按钮添加到按钮容器
+		if (user.getLevel() < 2)
+			levelButton.setDisable(true);
+
+		// 添加无限模式按钮
+		Button infiButton = new Button("Infinity");
+		infiButton.setOnAction(event -> {
+			level.loadLevel();
+			map = level.getMap();
+			restartLevel();
+		});
+		buttonContainer.getChildren().add(infiButton); // 将AI求解按钮添加到按钮容器
+		if (user.getLevel() < 5)
+			infiButton.setDisable(true);
 
 		// 功能按钮放右边
 		VBox functionContainer = new VBox(20);
@@ -94,7 +113,13 @@ public class SokobanGame extends Application {
 		restartContainer.setAlignment(Pos.CENTER);
 		Button restartButton = new Button("Restart");
 		restartButton.setPrefSize(190, 30);
-		restartButton.setOnAction(event -> restartLevel());
+		restartButton.setOnAction(event -> {
+			map.undoMove(999);
+			if(!mapSet) resetTimer();
+			if(mapSet) setTimer(map.getDuration());
+			hasStartedMoving = false;
+			resetStepCount();
+		});
 
 		restartContainer.getChildren().add(restartButton);
 		functionContainer.getChildren().add(restartContainer); // 将重启按钮添加到按钮容器
@@ -107,25 +132,29 @@ public class SokobanGame extends Application {
 			solveButton.setDisable(true);
 
 		// 添加重做按钮
-		Button redoButton = new Button("Redo");
+		Button redoButton = new Button("Undo");
 		redoButton.setOnAction(event -> {
 			if (map.undoMove(1)) {
 				incrementStepCount();
 			}
 		});
 		buttonContainer.getChildren().add(redoButton);
+
 		// 添加保存按钮
 		Button saveButton = new Button("Save");
 		saveButton.setOnAction(event -> {
 			saveButton(saveButton);
 		});
 		buttonContainer.getChildren().add(saveButton);
+		if (user.getUsername().equals("visitor")) {
+			saveButton.setDisable(true);
+		}
 
 		// 创建带有图标的按钮
-		Button upButton = createImageButton("/arrows/arrowUp.png", "↑");
-		Button downButton = createImageButton("/arrows/arrowDown.png", "↓");
-		Button leftButton = createImageButton("/arrows/arrowLeft.png", "←");
-		Button rightButton = createImageButton("/arrows/arrowRight.png", "→");
+		Button upButton = createImageButton("/arrows/arrowUp.png", "");
+		Button downButton = createImageButton("/arrows/arrowDown.png", "");
+		Button leftButton = createImageButton("/arrows/arrowLeft.png", "");
+		Button rightButton = createImageButton("/arrows/arrowRight.png", "");
 
 		// 设置方向按钮大小
 		upButton.setPrefSize(50, 50);
@@ -153,8 +182,11 @@ public class SokobanGame extends Application {
 		// 添加方向按钮事件监听器（保持原有的键盘事件监听器）
 		scene.setOnKeyPressed(event -> {
 			KeyCode keyCode = event.getCode();
-			if (!hasStartedMoving) { // 如果玩家还没有开始移动，则启动计时器
-				resetTimer();
+			if (!hasStartedMoving) { // 如果玩家开始移动，则启动计时器
+				if (!mapSet)
+					resetTimer();
+				if (mapSet)
+					setTimer(map.getDuration());
 				hasStartedMoving = true;
 			}
 			handleKeyPress(keyCode.toString().charAt(0), primaryStage);
@@ -179,46 +211,72 @@ public class SokobanGame extends Application {
 		// 初始化关卡管理器
 		level = new Level(gamePane);
 
+		level.setGame(this);
+
 		// 添加计时标签到界面底部
+		lblLevel.setText("Level " + (currentLevelIndex));
 		VBox bottomContainer = new VBox(10);
 		bottomContainer.setPadding(new Insets(10));
 		lblTimer.setFont(BIGGER_FONT);
+		lblLevel.setFont(BIGGER_FONT);
 		lblStepCount.setFont(BIGGER_FONT);
-		bottomContainer.getChildren().addAll(lblTimer, lblStepCount); // 添加步数标签到界面底部
+		bottomContainer.getChildren().addAll(lblLevel, lblTimer, lblStepCount); // 添加步数标签到界面底部
 		root.setBottom(bottomContainer);
 
-		// 默认加载第一关
 		if (!mapSet) {
 			if (user.getLevel() < 1) {
 				user.updateLevel(1);
+			} else if (user.getLevel() > 5) {
+				user.updateLevel(5);
 			}
-			loadLevel(user.getLevel());
+			loadLevel(currentLevelIndex);
 		} else {
 			loadLevel(map);
 		}
 
 		scene.setOnKeyPressed(event -> {
 			KeyCode keyCode = event.getCode();
-			if (!hasStartedMoving) { // 如果玩家还没有开始移动，则启动计时器
-				resetTimer();
+			if (!hasStartedMoving) { // 如果玩家开始移动，则启动计时器
+				if (!mapSet)
+					resetTimer();
+				if (mapSet)
+					setTimer(map.getDuration());
 				hasStartedMoving = true;
 			}
 			handleKeyPress(keyCode.toString().charAt(0), primaryStage);
 		});
 
+		if (reload) {
+			restartLevel();
+		}
+
 		primaryStage.setTitle("Sokoban Game");
 		primaryStage.setScene(scene);
 		primaryStage.show();
-		// Set up a listener for afterVictory changes
+
+		if (mapSet) {
+			stepCount = map.getStep();
+		}
+
 		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> {
 			if (afterVictory == 1) {
-				restartLevel();
+				System.out.println("Restarting level");
+				map.undoMove(999);
+				if(!mapSet) resetTimer();
+				if(mapSet) setTimer(map.getDuration());
+				hasStartedMoving = false;
+				resetStepCount();
 				afterVictory = 0;
 			} else if (afterVictory == 2) {
 				currentLevelIndex++;
 				loadLevel(currentLevelIndex + 1);
 				afterVictory = 0;
 				restartLevel();
+			} else if (afterVictory == 3) {
+				level.loadLevel();
+				map = level.getMap();
+				restartLevel();
+				afterVictory = 0;
 			}
 		}));
 		timeline.setCycleCount(Timeline.INDEFINITE);
@@ -264,6 +322,7 @@ public class SokobanGame extends Application {
 		hasStartedMoving = false; // 当加载新关卡时重置移动状态
 		stopTimer(); // 确保停止任何正在运行的计时器
 		resetStepCount();
+		congratulated = false;
 	}
 
 	private void loadLevel(Backend map) {
@@ -290,14 +349,33 @@ public class SokobanGame extends Application {
 		timer.start();
 	}
 
+	private void setTimer(int duration) {
+		startTime = System.currentTimeMillis() - duration;
+		lblTimer.setText("00:00"); // 重置时间标签
+		timer = new AnimationTimer() {
+			@Override
+			public void handle(long now) {
+				if (!hasStartedMoving || level.gameEnd())
+					return; // 如果玩家还没开始移动，则不更新时间
+				long elapsedTime = System.currentTimeMillis() - startTime;
+				updateLabel(elapsedTime);
+			}
+		};
+		timer.start();
+	}
+
+	public int getDuration() {
+		return (int) (System.currentTimeMillis() - startTime);
+	}
+
 	private void restartLevel() {
 		stopTimer(); // 确保停止任何正在运行的计时器
 		hasStartedMoving = false; // 当加载新关卡时重置移动状态
-		map.restoreMap();
 		level.restartLevel();
 		resetTimer(); // 重置并启动计时器
 		hasStartedMoving = false; // 重置移动状态
 		resetStepCount();
+		congratulated = false;
 	}
 
 	private int getCurrentLevelIndex() {
@@ -327,6 +405,9 @@ public class SokobanGame extends Application {
 
 	private void resetStepCount() {
 		level.stepnum = 0;
+		if (mapSet) {
+			level.stepnum = map.getStep();
+		}
 		Platform.runLater(() -> lblStepCount.setText("Steps: " + level.stepnum)); // 确保在JavaFX应用程序线程上更新UI
 	}
 
@@ -338,6 +419,7 @@ public class SokobanGame extends Application {
 
 			SaveController controller = loader.getController();
 			controller.setMap(map);
+			controller.setName(name);
 
 			Stage stage = new Stage();
 			stage.setTitle("保存游戏");
@@ -350,8 +432,41 @@ public class SokobanGame extends Application {
 		}
 	}
 
+	private void levelSelect(Button button) {
+		try {
+			// 保存当前窗口引用
+			Stage currentStage = (Stage) button.getScene().getWindow();
+
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/LevelSelectView.fxml"));
+			Parent root = loader.load();
+
+			LevelSelector controller = loader.getController();
+			controller.setUser(user);
+			controller.setReload(true);
+			controller.setStage(currentStage);
+
+			Stage stage = new Stage();
+			stage.setTitle("选择关卡");
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.setScene(new Scene(root));
+
+			// 显示新窗口后关闭当前窗口
+			stage.showAndWait();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Error loading FXML: " + e.getMessage());
+		}
+	}
+
 	private void showVictoryDialog(Stage ownerstage) {
-		user.updateLevel(currentLevelIndex + 1);
+		if (!Platform.isFxApplicationThread() || congratulated) {
+			congratulated = true;
+			return;
+		}
+
+		if (user.getLevel() < 5) {
+			user.updateLevel(user.getLevel() + 1);
+		}
 
 		for (int i = 0; i < user.getLevel(); i++) {
 			buttonContainer.getChildren().get(i).setDisable(false);
@@ -391,7 +506,10 @@ public class SokobanGame extends Application {
 				dialogStage.close(); // 关闭对话框
 			});
 		} else {
-			nextLevelButton.setDisable(true); // 如果没有下一关，则禁用按钮
+			nextLevelButton.setOnAction(event -> {
+				dialogStage.setUserData(3);
+				dialogStage.close(); // 关闭对话框
+			});
 		}
 
 		// 将组件添加到布局容器中
@@ -402,6 +520,38 @@ public class SokobanGame extends Application {
 		dialogStage.setScene(dialogScene);
 
 		// 显示对话框
+		dialogStage.showAndWait();
+
+		afterVictory = (int) dialogStage.getUserData();
+	}
+
+	private void showFailedDialog(Stage ownerstage) {
+		if (user.getLevel() >= 5)
+			solveButton.setDisable(false);
+
+		Stage dialogStage = new Stage();
+		dialogStage.initModality(Modality.WINDOW_MODAL);
+		dialogStage.initOwner(ownerstage);
+
+		VBox dialogVbox = new VBox(10);
+		dialogVbox.setPadding(new Insets(10));
+		dialogVbox.setAlignment(Pos.CENTER);
+
+		Label victoryLabel = new Label("Failed!");
+		victoryLabel.setFont(BIGGER_FONT);
+
+		Button restartButton = new Button("Restart Level");
+		restartButton.setPrefSize(100, 30);
+		restartButton.setOnAction(event -> {
+			dialogStage.setUserData(1);
+			dialogStage.close();
+		});
+
+		// 添加组件到VBox
+		dialogVbox.getChildren().addAll(victoryLabel, restartButton);
+
+		Scene dialogScene = new Scene(dialogVbox, 300, 150);
+		dialogStage.setScene(dialogScene);
 		dialogStage.showAndWait();
 
 		afterVictory = (int) dialogStage.getUserData();
@@ -500,16 +650,31 @@ public class SokobanGame extends Application {
 				break;
 		}
 
-		if (level.gameEnd()) {
+		if (level.gameEnd() && !congratulated) {
 			System.out.println("Level ended");
 			stopTimer();
 			hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
 			showVictoryDialog(primaryStage);
+		}
+
+		if (map.isDead()) {
+			System.out.println("Level ended");
+			stopTimer();
+			hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
+			showFailedDialog(primaryStage);
 		}
 	}
 
 	public void setMap(Backend map) {
 		this.map = map;
 		this.mapSet = true;
+	}
+
+	public void setReload(boolean reload) {
+		this.reload = reload;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }

@@ -49,8 +49,12 @@ public class Backend {
 
 	private Pane container;
 
+	private int step, duration;
+
 	private static final String SAVE_DIR = System.getProperty("user.home") + File.separator + ".sokoban"
 			+ File.separator + "maps";
+
+	private String name;
 
 	public Backend(int x, int y, Level level, Pane container) {
 		mapX = x;
@@ -100,31 +104,28 @@ public class Backend {
 
 	// 保存地图到本地
 	public boolean saveMap(String mapName) {
+		// First delete any existing maps with the same name
+		List<String> existingMaps = listSavedMaps();
+		for (String map : existingMaps) {
+			if (map.startsWith(mapName + ":|")) {
+				try {
+					Files.delete(Paths.get(SAVE_DIR, map + ".map"));
+				} catch (IOException e) {
+					System.err.println("Failed to delete old map: " + e.getMessage());
+				}
+			}
+		}
+
 		try {
 			// 确保保存目录存在
 			Files.createDirectories(Paths.get(SAVE_DIR));
 
-			// 1. 创建可序列化的数据结构
-			int[][] staticMapCopy = new int[mapX][mapY];
-			int[][] dynamicMapCopy = new int[mapX][mapY];
-
-			// 2. 进行深拷贝并验证数据
-			for (int i = 0; i < mapX; i++) {
-				for (int j = 0; j < mapY; j++) {
-					staticMapCopy[i][j] = levelArray[i][j];
-					dynamicMapCopy[i][j] = levelArrayDynamic[i][j];
-
-					// 验证是否有数据
-					if (staticMapCopy[i][j] != 0 || dynamicMapCopy[i][j] != 0) {
-						System.out.println("Found non-zero data at [" + i + "][" + j + "]");
-					}
-				}
-			}
-
-			// 3. 创建新的HashMap并存入深拷贝的数据
 			Map<String, Serializable> mapData = new HashMap<>();
-			mapData.put("staticMap", staticMapCopy);
-			mapData.put("dynamicMap", dynamicMapCopy);
+
+			int[][] array = getLevelArrayDynamic();
+			mapData.put("Duration", level.getDuration());
+			mapData.put("Steps", level.getStep());
+			mapData.put("Map", array);
 			mapData.put("mapX", Integer.valueOf(mapX));
 			mapData.put("mapY", Integer.valueOf(mapY));
 			mapData.put("moveHistory", moveHistory.toArray(new double[moveHistory.size()][]));
@@ -133,7 +134,7 @@ public class Backend {
 			validateMapData(mapData);
 
 			// 保存到文件
-			String filePath = SAVE_DIR + File.separator + mapName + "\\|" + new Date().getTime() + ".map";
+			String filePath = SAVE_DIR + File.separator + mapName + ":|" + new Date().getTime() + ".map";
 			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
 				oos.writeObject(mapData);
 				oos.flush();
@@ -147,13 +148,9 @@ public class Backend {
 	}
 
 	private void validateMapData(Map<String, Serializable> mapData) {
-		int[][] staticMap = (int[][]) mapData.get("staticMap");
-		int[][] dynamicMap = (int[][]) mapData.get("dynamicMap");
+		int[][] dynamicMap = (int[][]) mapData.get("Map");
 
 		System.out.println("Validating map data before save:");
-		System.out.println("Static map:");
-		printArray(staticMap);
-		System.out.println("Dynamic map:");
 		printArray(dynamicMap);
 	}
 
@@ -187,17 +184,21 @@ public class Backend {
 	@SuppressWarnings("unchecked")
 	public boolean loadMap(String mapName) {
 		String filePath = SAVE_DIR + File.separator + mapName + ".map";
+		name = mapName;
 		System.out.println("Loading map: " + filePath);
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
 			Map<String, Object> mapData = (Map<String, Object>) ois.readObject();
 
 			// 恢复地图状态
-			int[][] dynamicMap = (int[][]) mapData.get("dynamicMap");
-			int[][] staticMap = (int[][]) mapData.get("staticMap");
+			int[][] dynamicMap = (int[][]) mapData.get("Map");
+			int[][] staticMap = (int[][]) mapData.get("Map");
 
 			// Restore move history
 			double[][] moveHistoryArray = (double[][]) mapData.get("moveHistory");
 			Integer[] moveStepsArray = (Integer[]) mapData.get("moveSteps");
+
+			step = (int) mapData.get("Steps");
+			duration = (int) mapData.get("Duration");
 
 			moveHistory.clear();
 			moveSteps.clear();
@@ -244,6 +245,11 @@ public class Backend {
 		loadLevel();
 	}
 
+	public void cleanMap() {
+		cleanShape();
+		loadLevel();
+	}
+
 	// 检查地图是否存在
 	public boolean mapExists(String mapName) {
 		return Files.exists(Paths.get(SAVE_DIR, mapName + ".map"));
@@ -263,15 +269,44 @@ public class Backend {
 		return levelShape[(int) x][(int) y];
 	}
 
+	public boolean isDead() {
+		System.out.println("Checking if dead");
+		for (DynamicShape shape : dynamicShapes) {
+			if (shape.getClass() == Box.class) {
+				Box box = (Box) shape;
+				if (levelArray[(int) box.getX()][(int) box.getY()] == TARGET) {
+					continue;
+				}
+				int wall = 0;
+				for (int i = 0; i < 3; i++) {
+					if (levelShape[(int) box.getX() - 1 + i][(int) box.getY()].getClass() == Wall.class) {
+						wall++;
+					}
+				}
+				for (int i = 0; i < 3; i++) {
+					if (levelShape[(int) box.getX()][(int) box.getY() - 1 + i].getClass() == Wall.class) {
+						wall++;
+					}
+				}
+				if (wall >= 2) {
+					return true;
+				}
+				System.out.println("Box at " + box.getX() + ", " + box.getY() + ", " + wall + " is not dead");
+			}
+		}
+		return false;
+	}
+
 	private void proceedSaveData(int[][] dynamicMap, int[][] staticMap) {
 		for (int y = 0; y < mapY; y++) {
 			for (int x = 0; x < mapX; x++) {
 				if (dynamicMap[x][y] >= 5) {
-					this.levelArrayDynamic[x][y] = dynamicMap[x][y] - 3;
+					levelArrayDynamic[x][y] = dynamicMap[x][y] - 3;
+					levelArray[x][y] = TARGET;
 				} else {
 					levelArrayDynamic[x][y] = dynamicMap[x][y];
+					levelArray[x][y] = staticMap[x][y];
 				}
-				levelArray[x][y] = staticMap[x][y];
 			}
 		}
 	}
@@ -284,19 +319,15 @@ public class Backend {
 		levelArray = new int[mapX][mapY];
 		levelArrayDynamic = new int[mapX][mapY];
 
-		// 分别复制数据
-		for (int i = 0; i < mapX; i++) {
-			levelArray[i] = Arrays.copyOf(originalMap[i], mapY);
-			levelArrayDynamic[i] = Arrays.copyOf(originalMap[i], mapY);
-		}
-		cleanShape();
-		loadLevel();
+		cleanMap();
+		proceedSaveData(originalMap, originalMap);
 	}
 
 	public void loadLevel() {
 		for (int y = 0; y < mapY; y++) {
 			for (int x = 0; x < mapX; x++) {
 				int m = levelArrayDynamic[x][y];
+				int n = levelArray[x][y];
 				switch (m) {
 					case EMPTY:
 						levelShape[x][y] = new Empty(x, y);
@@ -307,13 +338,21 @@ public class Backend {
 					case PLAYER:
 						player = new Player(x, y, level, container);
 						dynamicShapes.add(player);
-						levelShape[x][y] = new Empty(x, y);
 						levelDynamicShapes[x][y] = player;
+						if (n == TARGET) {
+							levelShape[x][y] = new Target(x, y);
+						} else {
+							levelShape[x][y] = new Empty(x, y);
+						}
 						break;
 					case BOX:
 						levelDynamicShapes[x][y] = new Box(x, y, level, container);
 						dynamicShapes.add(levelDynamicShapes[x][y]);
-						levelShape[x][y] = new Empty(x, y);
+						if (n == TARGET) {
+							levelShape[x][y] = new Target(x, y);
+						} else {
+							levelShape[x][y] = new Empty(x, y);
+						}
 						break;
 					case TARGET:
 						levelShape[x][y] = new Target(x, y);
@@ -350,6 +389,9 @@ public class Backend {
 	public boolean undoMove(int stepCount) {
 		if (moveSteps.isEmpty()) {
 			return false;
+		}
+		if(stepCount >= moveSteps.size()) {
+			stepCount = moveSteps.size();
 		}
 		for (int i = 0; i < stepCount; i++) {
 			int steps = moveSteps.pop();
@@ -404,7 +446,7 @@ public class Backend {
 		for (DynamicShape[] row : levelDynamicShapes) {
 			Arrays.fill(row, null);
 		}
-		for(StaticShape[] row : levelShape) {
+		for (StaticShape[] row : levelShape) {
 			Arrays.fill(row, null);
 		}
 		player = null;
@@ -446,8 +488,11 @@ public class Backend {
 		levelArrayMove((int) originX, (int) originY, (int) deltaX, (int) deltaY);
 		if (levelDynamicShapes[(int) originX][(int) originY] != null) {
 			DynamicShape shape = levelDynamicShapes[(int) originX][(int) originY];
-			if(record)	{shape.moveXY(deltaX, deltaY);}
-			else 		{shape.directMove(deltaX, deltaY);}
+			if (record) {
+				shape.moveXY(deltaX, deltaY);
+			} else {
+				shape.directMove(deltaX, deltaY);
+			}
 			System.out.println("Moving shape at: " + originX + ", " + originY + " by: " + deltaX + ", " + deltaY);
 			levelDynamicShapes[(int) newX][(int) newY] = levelDynamicShapes[(int) originX][(int) originY];
 			levelDynamicShapes[(int) originX][(int) originY] = null;
@@ -466,5 +511,13 @@ public class Backend {
 		int newY = y + deltaY;
 		levelArrayDynamic[newX][newY] = levelArrayDynamic[x][y];
 		levelArrayDynamic[x][y] = EMPTY;
+	}
+
+	public int getStep() {
+		return step;
+	}
+
+	public int getDuration() {
+		return duration;
 	}
 }

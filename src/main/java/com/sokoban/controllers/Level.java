@@ -12,6 +12,7 @@ public class Level {
 	private Pane root; // 游戏场景根节点
 
 	private Backend map;
+	private SokobanGame game;
 
 	public Level(Pane root) {
 		this.root = root;
@@ -20,7 +21,7 @@ public class Level {
 	public void restartLevel() {
 		clearGraph();
 
-		map.restoreMap();
+		map.cleanMap();
 
 		StaticShape[][] staticShapes = map.getLevel();
 		for (int y = 0; y < staticShapes.length; y++) {
@@ -52,24 +53,7 @@ public class Level {
 
 		System.out.println("Loading level " + (currentLevelIndex));
 
-		StaticShape[][] staticShapes = map.getLevel();
-		for (int y = 0; y < staticShapes.length; y++) {
-			for (int x = 0; x < staticShapes[y].length; x++) {
-				StaticShape shape = staticShapes[x][y];
-				if (shape != null) {
-					root.getChildren().add(shape.getImageView());
-					System.out.println(
-							"Picture at x: " + shape.getX() + ", y: " + shape.getY() + " path: " + shape.imagePath);
-				}
-			}
-		}
-
-		// 保证DynamicShape在静态对象之上
-		DynamicShape dynamicShapes[] = map.getDynamicShapes();
-		for (DynamicShape shape : dynamicShapes) {
-			root.getChildren().add(shape.getImageView());
-			System.out.println("Adding dynamic shape at " + shape.getX() + ", " + shape.getY());
-		}
+		render(map);
 	}
 
 	public void loadLevel(int levelIndex) {
@@ -82,6 +66,23 @@ public class Level {
 
 		System.out.println("Loading level " + (currentLevelIndex));
 
+		render(map);
+	}
+
+	public void loadLevel() {
+		// 清空当前场景
+		clearGraph();
+
+		map = new Backend(10, 10, this, root);
+
+		map.reMakeImage(this, root);
+
+		System.out.println("Loading level " + (currentLevelIndex));
+
+		render(map);
+	}
+
+	private void render(Backend map) {
 		StaticShape[][] staticShapes = map.getLevel();
 		for (int y = 0; y < staticShapes.length; y++) {
 			for (int x = 0; x < staticShapes[y].length; x++) {
@@ -113,10 +114,18 @@ public class Level {
 		return true;
 	}
 
+	public int getStep() {
+		return stepnum;
+	}
+
+	public int getDuration() {
+		return game.getDuration();
+	}
+
 	public void clearGraph() {
 		if (map != null) {
 			if (root != null) {
-				
+
 				root.getChildren().clear();
 			}
 			stepnum = 0;
@@ -129,58 +138,62 @@ public class Level {
 		return map;
 	}
 
+	public void setGame(SokobanGame game) {
+		this.game = game;
+	}
+
 	// 定义五个关卡
 
 	private static final int[][][] LEVELS = {
-			{ // 关卡 1
+			{
+					{ -1, -1, -1, -1, -1, -1, -1, -1 },
+					{ -1, 1, 1, 1, 1, 1, -1, -1 },
+					{ -1, 1, 2, 0, 0, 1, -1, -1 },
+					{ -1, 1, 0, 0, 4, 1, -1, -1 },
+					{ -1, 1, 0, 3, 3, 1, -1, -1 },
+					{ -1, 1, 0, 4, 0, 1, -1, -1 },
+					{ -1, 1, 1, 1, 1, 1, -1, -1 },
+					{ -1, -1, -1, -1, -1, -1, -1, -1 },
+			},
+			{
 					{ -1, -1, -1, -1, -1, -1, -1, -1 },
 					{ -1, 1, 1, 1, 1, 1, 1, -1 },
 					{ -1, 1, 2, 0, 0, 0, 1, -1 },
-					{ -1, 1, 0, 0, 3, 4, 1, -1 },
-					{ -1, 1, 0, 4, 3, 0, 1, -1 },
-					{ -1, 1, 1, 1, 1, 1, 1, -1 },
-					{ -1, -1, -1, -1, -1, -1, -1, -1 },
-					{ -1, -1, -1, -1, -1, -1, -1, -1 }
+					{ -1, 1, 0, 3, 1, 0, 1, -1 },
+					{ -1, 1, 0, 3, 4, 0, 1, -1 },
+					{ -1, 1, 0, 0, 0, 0, 1, -1 },
+					{ -1, 1, 1, 0, 4, 0, 1, -1 },
+					{ -1, 0, 1, 1, 1, 1, 1, -1 },
 			},
-			{ // 关卡 2
+			{
 					{ -1, -1, -1, -1, -1, -1, -1, -1 },
-					{ -1, 1, 1, 1, 1, 1, 1, 0 },
-					{ -1, 1, 2, 0, 0, 0, 1, 1 },
+					{ -1, -1, 1, 1, 1, 1, 1, 1 },
+					{ -1, -1, 1, 2, 0, 0, 0, 1 },
+					{ -1, 1, 1, 0, 0, 1, 0, 1 },
+					{ -1, 1, 0, 4, 0, 4, 0, 1 },
 					{ -1, 1, 0, 3, 3, 0, 0, 1 },
-					{ -1, 1, 0, 1, 4, 0, 4, 1 },
-					{ -1, 1, 0, 0, 0, 0, 0, 1 },
-					{ -1, 1, 1, 1, 1, 1, 1, 1 },
-					{ -1, -1, -1, -1, -1, -1, -1, -1 }
+					{ -1, 1, 1, 1, 0, 0, 0, 1 },
+					{ -1, -1, -1, 1, 1, 1, 1, 1 },
 			},
-			{ // 关卡 3
-					{ -1, -1, -1, -1, -1, -1, -1, -1 },
-					{ -1, -1, -1, 1, 1, 1, 1, -1 },
-					{ -1, 1, 1, 1, 0, 0, 1, -1 },
-					{ -1, 1, 2, 0, 4, 3, 1, 1 },
-					{ -1, 1, 0, 0, 0, 3, 0, 1 },
-					{ -1, 1, 0, 1, 4, 0, 0, 1 },
-					{ -1, 1, 0, 0, 0, 0, 0, 1 },
-					{ -1, 1, 1, 1, 1, 1, 1, 1 }
-			},
-			{ // 关卡 4
+			{
 					{ -1, -1, -1, -1, -1, -1, -1, -1 },
 					{ -1, -1, 1, 1, 1, 1, 1, -1 },
-					{ -1, 1, 1, 2, 0, 0, 1, 1 },
-					{ -1, 1, 0, 0, 1, 0, 0, 1 },
-					{ -1, 1, 0, 3, 6, 3, 0, 1 },
-					{ -1, 1, 0, 0, 4, 0, 0, 1 },
-					{ -1, 1, 1, 0, 4, 0, 1, 1 },
-					{ -1, -1, 1, 1, 1, 1, 1, -1 }
+					{ -1, 1, 1, 0, 0, 0, 1, 1 },
+					{ -1, 1, 2, 0, 3, 0, 0, 1 },
+					{ -1, 1, 0, 1, 6, 4, 4, 1 },
+					{ -1, 1, 0, 0, 3, 0, 0, 1 },
+					{ -1, 1, 1, 0, 0, 0, 1, 1 },
+					{ -1, -1, 1, 1, 1, 1, 1, -1 },
 			},
-			{ // 关卡 5
-					{ -1, -1, -1, -1, -1, -1, -1, -1 },
-					{ 1, 1, 1, 1, 1, 1, -1, -1 },
-					{ 1, 0, 0, 0, 0, 1, 1, 1 },
-					{ 1, 0, 0, 0, 4, 4, 0, 1 },
-					{ 1, 0, 3, 3, 3, 2, 0, 1 },
-					{ 1, 0, 0, 1, 0, 4, 0, 1 },
-					{ 1, 1, 1, 1, 1, 1, 1, 1 },
-					{ -1, -1, -1, -1, -1, -1, -1, -1 }
+			{
+					{ -1, 1, 1, 1, 1, 1, 1, -1 },
+					{ -1, 1, 0, 0, 0, 0, 1, -1 },
+					{ -1, 1, 0, 0, 3, 0, 1, -1 },
+					{ -1, 1, 0, 0, 3, 1, 1, -1 },
+					{ -1, 1, 0, 4, 3, 0, 1, -1 },
+					{ -1, 1, 1, 4, 2, 4, 1, -1 },
+					{ -1, -1, 1, 0, 0, 0, 1, -1 },
+					{ -1, -1, 1, 1, 1, 1, 1, -1 },
 			}
 	};
 }

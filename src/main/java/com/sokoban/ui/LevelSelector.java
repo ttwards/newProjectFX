@@ -24,6 +24,8 @@ public class LevelSelector {
 	private Button level6Button;
 
 	private User user;
+	private boolean reload = false;
+	private Stage prevStage;
 
 	@FXML
 	public void levelSelect1(ActionEvent event) throws Exception {
@@ -32,6 +34,10 @@ public class LevelSelector {
 		SokobanGame sokobanGame = new SokobanGame();
 		sokobanGame.setLevel(1);
 		sokobanGame.setUser(user);
+		sokobanGame.setReload(reload);
+		if (prevStage != null) {
+			prevStage.close();
+		}
 		sokobanGame.start(new Stage());
 	}
 
@@ -42,6 +48,10 @@ public class LevelSelector {
 		SokobanGame sokobanGame = new SokobanGame();
 		sokobanGame.setLevel(2);
 		sokobanGame.setUser(user);
+		sokobanGame.setReload(reload);
+		if (prevStage != null) {
+			prevStage.close();
+		}
 		sokobanGame.start(new Stage());
 	}
 
@@ -52,6 +62,10 @@ public class LevelSelector {
 		SokobanGame sokobanGame = new SokobanGame();
 		sokobanGame.setLevel(3);
 		sokobanGame.setUser(user);
+		sokobanGame.setReload(reload);
+		if (prevStage != null) {
+			prevStage.close();
+		}
 		sokobanGame.start(new Stage());
 	}
 
@@ -62,6 +76,10 @@ public class LevelSelector {
 		SokobanGame sokobanGame = new SokobanGame();
 		sokobanGame.setLevel(4);
 		sokobanGame.setUser(user);
+		sokobanGame.setReload(reload);
+		if (prevStage != null) {
+			prevStage.close();
+		}
 		sokobanGame.start(new Stage());
 	}
 
@@ -72,14 +90,26 @@ public class LevelSelector {
 		SokobanGame sokobanGame = new SokobanGame();
 		sokobanGame.setLevel(5);
 		sokobanGame.setUser(user);
+		sokobanGame.setReload(reload);
+		if (prevStage != null) {
+				prevStage.close();
+		}
 		sokobanGame.start(new Stage());
 	}
 
 	@FXML
 	public void levelSelect6(ActionEvent event) throws Exception {
-		Parent root = FXMLLoader.load(getClass().getResource("/views/StorageSelect.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/StorageSelect.fxml"));
+		Parent root = loader.load();
+		StorageSelector controller = loader.getController();
+		controller.setReload(reload);
+		controller.setUser(user);
+		if (prevStage != null) {
+			prevStage.close();
+		}
 		Stage stage = (Stage) level6Button.getScene().getWindow();
 		stage.setScene(new Scene(root));
+		stage.show();
 	}
 
 	public void setUser(User user) {
@@ -115,12 +145,15 @@ public class LevelSelector {
 				break;
 
 			default:
-				level2Button.setDisable(true);
-				level3Button.setDisable(true);
-				level4Button.setDisable(true);
-				level5Button.setDisable(true);
-				// level6Button.setDisable(true);
 				break;
 		}
+	}
+
+	public void setReload(boolean reload) {
+		this.reload = reload;
+	}
+
+	public void setStage(Stage stage) {
+		this.prevStage = stage;
 	}
 }

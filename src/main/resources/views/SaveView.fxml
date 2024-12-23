@@ -28,7 +28,7 @@
       <HBox alignment="CENTER" layoutX="18.0" layoutY="105.0" prefHeight="37.0" prefWidth="200.0" spacing="25.0">
          <children>
             <Button fx:id="confirm" mnemonicParsing="false" onAction="#handleConfirm" text="Confirm" />
-            <Button fx:id="cancal" mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
+            <Button fx:id="cancel" mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
          </children>
       </HBox>
    </children>
