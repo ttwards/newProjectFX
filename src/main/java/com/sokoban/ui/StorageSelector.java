@@ -53,21 +53,44 @@ public class StorageSelector implements Initializable {
 		mapName.setCellValueFactory(new PropertyValueFactory<>("name"));
 		mapDate.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-		loadTableData();
+		// 添加日期选择器监听
+		startDate.valueProperty().addListener((obs, oldVal, newVal) -> {
+			if (user != null)
+				records.clear();
+				mapList.clear();
+			loadTableData();
+		});
+
+		endDate.valueProperty().addListener((obs, oldVal, newVal) -> {
+			if (user != null)
+			records.clear();
+				mapList.clear();
+				loadTableData();
+		});
 	}
 
 	private void loadTableData() {
-		mapList = Backend.listSavedMaps();
+		mapList = Backend.listSavedMaps(user.getUsername());
+
+		// 获取开始和结束日期的毫秒时间戳
+		long startTime = startDate.getValue() != null
+				? startDate.getValue().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+				: 0;
+		long endTime = endDate.getValue() != null ? endDate.getValue().plusDays(1)
+				.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : Long.MAX_VALUE;
 
 		for (String map : mapList) {
 			int separatorIndex = map.indexOf(":|");
 			if (separatorIndex != -1) {
 				String name = map.substring(0, separatorIndex);
-				String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd")
-						.format(new java.util.Date(Long.parseLong(map.substring(separatorIndex + 2))));
-				records.add(new StorageInfo(name, timestamp));
-			} else {
-				System.err.println("无效的存档名格式: " + map);
+				long timestamp = Long.parseLong(map.substring(separatorIndex + 2));
+
+				// 检查日期是否在范围内
+				if (timestamp >= startTime && timestamp <= endTime) {
+					String dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd")
+							.format(new java.util.Date(timestamp));
+					records.add(new StorageInfo(name, dateStr));
+				}
 			}
 		}
 		storagedList.setItems(records);
@@ -96,7 +119,7 @@ public class StorageSelector implements Initializable {
 		stage.close();
 
 		SokobanGame sokobanGame = new SokobanGame();
-		Backend map = new Backend(selectedMapFile);
+		Backend map = new Backend(selectedMapFile, user.getUsername());
 		sokobanGame.setMap(map);
 		sokobanGame.setReload(reload);
 		sokobanGame.setUser(user);
@@ -121,5 +144,6 @@ public class StorageSelector implements Initializable {
 
 	public void setUser(User user) {
 		this.user = user;
+		loadTableData();
 	}
 }

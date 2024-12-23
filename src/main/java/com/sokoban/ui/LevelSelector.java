@@ -147,6 +147,9 @@ public class LevelSelector {
 			default:
 				break;
 		}
+		if(user.getUsername().equals("visitor")) {
+			level6Button.setDisable(true);
+		}
 	}
 
 	public void setReload(boolean reload) {

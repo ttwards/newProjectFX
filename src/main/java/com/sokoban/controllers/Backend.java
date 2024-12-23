@@ -64,8 +64,8 @@ public class Backend {
 		generateMap();
 	}
 
-	public Backend(String mapName) {
-		loadMap(mapName);
+	public Backend(String mapName, String username) {
+		loadMap(mapName, username);
 	}
 
 	public Backend(int[][] levelArray) {
@@ -103,13 +103,14 @@ public class Backend {
 	}
 
 	// 保存地图到本地
-	public boolean saveMap(String mapName) {
+	public boolean saveMap(String mapName, String username) {
 		// First delete any existing maps with the same name
-		List<String> existingMaps = listSavedMaps();
+		List<String> existingMaps = listSavedMaps(username);
+		String filePath = SAVE_DIR + File.separator + username;
 		for (String map : existingMaps) {
 			if (map.startsWith(mapName + ":|")) {
 				try {
-					Files.delete(Paths.get(SAVE_DIR, map + ".map"));
+					Files.delete(Paths.get(filePath, map + ".map"));
 				} catch (IOException e) {
 					System.err.println("Failed to delete old map: " + e.getMessage());
 				}
@@ -118,7 +119,7 @@ public class Backend {
 
 		try {
 			// 确保保存目录存在
-			Files.createDirectories(Paths.get(SAVE_DIR));
+			Files.createDirectories(Paths.get(filePath));
 
 			Map<String, Serializable> mapData = new HashMap<>();
 
@@ -134,12 +135,12 @@ public class Backend {
 			validateMapData(mapData);
 
 			// 保存到文件
-			String filePath = SAVE_DIR + File.separator + mapName + ":|" + new Date().getTime() + ".map";
-			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+			String path = filePath + File.separator + mapName + ":|" + new Date().getTime() + ".map";
+			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path))) {
 				oos.writeObject(mapData);
 				oos.flush();
 			}
-			System.out.println("地图已保存: " + filePath);
+			System.out.println("地图已保存: " + path);
 			return true;
 		} catch (IOException e) {
 			System.err.println("保存地图失败: " + e.getMessage());
@@ -164,11 +165,12 @@ public class Backend {
 	}
 
 	// 列出所有已保存的地图
-	public static List<String> listSavedMaps() {
+	public static List<String> listSavedMaps(String username) {
 		List<String> mapNames = new ArrayList<>();
+		String filePath = SAVE_DIR + File.separator + username;
 		try {
-			Files.createDirectories(Paths.get(SAVE_DIR));
-			try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(SAVE_DIR), "*.map")) {
+			Files.createDirectories(Paths.get(filePath));
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(filePath), "*.map")) {
 				for (Path path : stream) {
 					String fileName = path.getFileName().toString();
 					mapNames.add(fileName.substring(0, fileName.length() - 4)); // 移除.map后缀
@@ -182,8 +184,8 @@ public class Backend {
 
 	// 从本地加载地图
 	@SuppressWarnings("unchecked")
-	public boolean loadMap(String mapName) {
-		String filePath = SAVE_DIR + File.separator + mapName + ".map";
+	public boolean loadMap(String mapName, String username) {
+		String filePath = SAVE_DIR + File.separator + username + File.separator + mapName + ".map";
 		name = mapName;
 		System.out.println("Loading map: " + filePath);
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {

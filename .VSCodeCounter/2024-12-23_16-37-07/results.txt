@@ -1,0 +1,74 @@
+Date : 2024-12-23 16:37:07
+Directory : /Users/ttwards/IdeaProjects/pushbox
+Total : 33 files,  2855 codes, 167 comments, 545 blanks, all 3567 lines
+
+Languages
++-----------------+------------+------------+------------+------------+------------+
+| language        | files      | code       | comment    | blank      | total      |
++-----------------+------------+------------+------------+------------+------------+
+| Java            |         25 |      2,537 |        116 |        479 |      3,132 |
+| XML             |          6 |        214 |          0 |         30 |        244 |
+| Batch           |          1 |        102 |         51 |         36 |        189 |
+| Java Properties |          1 |          2 |          0 |          0 |          2 |
++-----------------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                   |         33 |      2,855 |        167 |        545 |      3,567 |
+| . (Files)                                                                                           |          1 |        102 |         51 |         36 |        189 |
+| .mvn                                                                                                |          1 |          2 |          0 |          0 |          2 |
+| .mvn/wrapper                                                                                        |          1 |          2 |          0 |          0 |          2 |
+| src                                                                                                 |         31 |      2,751 |        116 |        509 |      3,376 |
+| src/main                                                                                            |         31 |      2,751 |        116 |        509 |      3,376 |
+| src/main/java                                                                                       |         25 |      2,537 |        116 |        479 |      3,132 |
+| src/main/java (Files)                                                                               |          1 |         11 |          0 |          2 |         13 |
+| src/main/java/com                                                                                   |         24 |      2,526 |        116 |        477 |      3,119 |
+| src/main/java/com/sokoban                                                                           |         24 |      2,526 |        116 |        477 |      3,119 |
+| src/main/java/com/sokoban (Files)                                                                   |          1 |         18 |          1 |          8 |         27 |
+| src/main/java/com/sokoban/controllers                                                               |         16 |      1,932 |         97 |        356 |      2,385 |
+| src/main/java/com/sokoban/ui                                                                        |          7 |        576 |         18 |        113 |        707 |
+| src/main/resources                                                                                  |          6 |        214 |          0 |         30 |        244 |
+| src/main/resources/views                                                                            |          6 |        214 |          0 |         30 |        244 |
++-----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+
+| filename                                                                                            | language        | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+
+| /Users/ttwards/IdeaProjects/pushbox/.mvn/wrapper/maven-wrapper.properties                           | Java Properties |          2 |          0 |          0 |          2 |
+| /Users/ttwards/IdeaProjects/pushbox/mvnw.cmd                                                        | Batch           |        102 |         51 |         36 |        189 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/Main.java                             | Java            |         18 |          1 |          8 |         27 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Backend.java              | Java            |        441 |         13 |         72 |        526 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Box.java                  | Java            |         20 |          0 |          6 |         26 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/DynamicShape.java         | Java            |         63 |          2 |         17 |         82 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Empty.java                | Java            |          6 |          0 |          0 |          6 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Level.java                | Java            |        157 |          8 |         34 |        199 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/LevelLoader.java          | Java            |         34 |          5 |          9 |         48 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/MapGenerator.java         | Java            |        212 |         19 |         37 |        268 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Null.java                 | Java            |          6 |          0 |          2 |          8 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Player.java               | Java            |         22 |          0 |          6 |         28 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanGame.java          | Java            |        546 |         40 |        108 |        694 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanSolver$State.class | Java            |         14 |          0 |          0 |         14 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanSolver.class       | Java            |         72 |          0 |          0 |         72 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanSolver.java        | Java            |        290 |         10 |         52 |        352 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/StaticShape.java          | Java            |         37 |          0 |          9 |         46 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Target.java               | Java            |          6 |          0 |          2 |          8 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Wall.java                 | Java            |          6 |          0 |          2 |          8 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/LevelSelector.java                 | Java            |        139 |          3 |         18 |        160 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/LoginController.java               | Java            |         85 |          2 |         14 |        101 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/RegisterController.java            | Java            |         67 |          1 |         13 |         81 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/SaveController.java                | Java            |         65 |          4 |         15 |         84 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/StorageInfo.java                   | Java            |         21 |          1 |          7 |         29 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/StorageSelector.java               | Java            |        118 |          7 |         25 |        150 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/User.java                          | Java            |         81 |          0 |         21 |        102 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/module-info.java                                  | Java            |         11 |          0 |          2 |         13 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/GameView.fxml                          | XML             |         33 |          0 |          4 |         37 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/LevelSelectView.fxml                   | XML             |         31 |          0 |          5 |         36 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/LoginView.fxml                         | XML             |         37 |          0 |          7 |         44 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/RegisterView.fxml                      | XML             |         35 |          0 |          7 |         42 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/SaveView.fxml                          | XML             |         32 |          0 |          4 |         36 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/resources/views/StorageSelect.fxml                     | XML             |         46 |          0 |          3 |         49 |
+| Total                                                                                               |                 |      2,855 |        167 |        545 |      3,567 |
++-----------------------------------------------------------------------------------------------------+-----------------+------------+------------+------------+------------+

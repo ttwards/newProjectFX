@@ -1,0 +1,41 @@
+Date : 2024-12-23 16:37:07
+Directory : /Users/ttwards/IdeaProjects/pushbox
+Total : 10 files,  372 codes, 8 comments, 70 blanks, all 450 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Java     |         10 |        372 |          8 |         70 |        450 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                         | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                            |         10 |        372 |          8 |         70 |        450 |
+| src                                                                                          |         10 |        372 |          8 |         70 |        450 |
+| src/main                                                                                     |         10 |        372 |          8 |         70 |        450 |
+| src/main/java                                                                                |         10 |        372 |          8 |         70 |        450 |
+| src/main/java/com                                                                            |         10 |        372 |          8 |         70 |        450 |
+| src/main/java/com/sokoban                                                                    |         10 |        372 |          8 |         70 |        450 |
+| src/main/java/com/sokoban/controllers                                                        |          6 |        266 |          3 |         53 |        322 |
+| src/main/java/com/sokoban/ui                                                                 |          4 |        106 |          5 |         17 |        128 |
++----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                     | language | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Backend.java       | Java     |         54 |         -4 |          6 |         56 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Box.java           | Java     |          1 |          0 |          0 |          1 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Level.java         | Java     |          5 |          0 |          9 |         14 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/Player.java        | Java     |          1 |          0 |          0 |          1 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanGame.java   | Java     |        150 |          4 |         33 |        187 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/controllers/SokobanSolver.java | Java     |         55 |          3 |          5 |         63 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/LevelSelector.java          | Java     |         32 |         -1 |          2 |         33 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/LoginController.java        | Java     |          5 |          0 |          0 |          5 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/SaveController.java         | Java     |         16 |          1 |          6 |         23 |
+| /Users/ttwards/IdeaProjects/pushbox/src/main/java/com/sokoban/ui/StorageSelector.java        | Java     |         53 |          5 |          9 |         67 |
+| Total                                                                                        |          |        372 |          8 |         70 |        450 |
++----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

@@ -23,6 +23,8 @@ public class SaveController implements Initializable {
 
 	private String name;
 
+	private User user;
+
 	@FXML
 	private void handleConfirm() {
 		if(nameBox.getText().isEmpty()) {
@@ -35,7 +37,7 @@ public class SaveController implements Initializable {
 			return;
 		}
 		try {
-			if(map.saveMap(nameBox.getText())) {
+			if(map.saveMap(nameBox.getText(), user.getUsername())) {
 				// 提示用户存档成功
 				Alert alert = new Alert(Alert.AlertType.INFORMATION);
 				alert.setTitle("Information");
@@ -73,5 +75,9 @@ public class SaveController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 		// 设置列的单元格值工厂
         nameBox.setText(name);
+	}
+
+	public void setUser(User user) {
+		this.user = user;
 	}
 }

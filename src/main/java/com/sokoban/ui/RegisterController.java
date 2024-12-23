@@ -39,7 +39,7 @@ public class RegisterController {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
 
             if (validRegister(out, in)) {
-				switchToLevelSelect();
+				switchToLogin();
 			}
             
         } catch (IOException e) {

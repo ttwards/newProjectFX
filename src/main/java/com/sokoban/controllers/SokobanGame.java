@@ -114,6 +114,7 @@ public class SokobanGame extends Application {
 		Button restartButton = new Button("Restart");
 		restartButton.setPrefSize(190, 30);
 		restartButton.setOnAction(event -> {
+			stopAI();
 			map.undoMove(999);
 			if(!mapSet) resetTimer();
 			if(mapSet) setTimer(map.getDuration());
@@ -250,6 +251,7 @@ public class SokobanGame extends Application {
 			restartLevel();
 		}
 
+
 		primaryStage.setTitle("Sokoban Game");
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -261,6 +263,7 @@ public class SokobanGame extends Application {
 		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> {
 			if (afterVictory == 1) {
 				System.out.println("Restarting level");
+				stopAI();
 				map.undoMove(999);
 				if(!mapSet) resetTimer();
 				if(mapSet) setTimer(map.getDuration());
@@ -420,6 +423,7 @@ public class SokobanGame extends Application {
 			SaveController controller = loader.getController();
 			controller.setMap(map);
 			controller.setName(name);
+			controller.setUser(user);
 
 			Stage stage = new Stage();
 			stage.setTitle("保存游戏");

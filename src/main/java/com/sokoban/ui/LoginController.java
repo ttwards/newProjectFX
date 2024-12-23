@@ -80,6 +80,11 @@ public class LoginController {
 			return true;
 		} else {
 			System.out.println("登录失败：" + parts[1]);
+			javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+			alert.setTitle("Login Failed");
+			alert.setHeaderText(null);
+			alert.setContentText("Invalid username or password");
+			alert.showAndWait();
 			return false;
 		}
 	}

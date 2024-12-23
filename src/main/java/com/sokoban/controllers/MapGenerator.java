@@ -84,7 +84,7 @@ public class MapGenerator {
 			if (newX < H - 1 && map[newX + 1][newY] == WALL) wallCount++;
 			if (newY > 0 && map[newX][newY - 1] == WALL) wallCount++;
 			if (newY < L - 1 && map[newX][newY + 1] == WALL) wallCount++;
-			if(wallCount != 0) return false;
+			if(wallCount > 1) return false;
 		}
 		return true;
 	}
@@ -123,7 +123,7 @@ public class MapGenerator {
 		// 2. 随机生成内部墙
 		for (int i = 2; i < H - 2; i++) {
 			for (int j = 2; j < L - 2; j++) {
-				if (rand.nextDouble() < 0.2) { // 20%概率生成墙
+				if (rand.nextDouble() < 0.4) { // 20%概率生成墙
 					map[i][j] = WALL;
 				}
 			}

@@ -21,7 +21,7 @@
         <Button fx:id="level3Button" onAction="#levelSelect3" text="第3关" GridPane.columnIndex="2" GridPane.rowIndex="0" />
         <Button fx:id="level4Button" onAction="#levelSelect4" text="第4关" GridPane.columnIndex="0" GridPane.rowIndex="1" />
         <Button fx:id="level5Button" onAction="#levelSelect5" text="第5关" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-        <Button fx:id="level6Button" onAction="#levelSelect6" text="第6关" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+        <Button fx:id="level6Button" onAction="#levelSelect6" text="存 档" GridPane.columnIndex="2" GridPane.rowIndex="1" />
       <columnConstraints>
          <ColumnConstraints />
          <ColumnConstraints />
