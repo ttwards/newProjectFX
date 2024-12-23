@@ -4,6 +4,7 @@ import javafx.animation.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.util.Duration;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -17,16 +18,14 @@ import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import java.io.IOException;
 
 import com.sokoban.ui.SaveController;
+import com.sokoban.ui.User;
 
 public class SokobanGame extends Application {
 
-	private Player player;
-	private Box box;
-	private Target target;
+	private User user;
 
 	private Level level;
 	private Pane gamePane;
@@ -49,6 +48,11 @@ public class SokobanGame extends Application {
 
 	private boolean mapSet = false;
 
+	HBox buttonContainer;
+	Button solveButton;
+
+	private int afterVictory = 0;
+
 	@Override
 	public void start(Stage primaryStage) {
 		// 创建主布局
@@ -60,15 +64,25 @@ public class SokobanGame extends Application {
 		root.setCenter(gamePane);
 
 		// 创建关卡选择按钮容器
-		HBox buttonContainer = new HBox(10); // 水平间距为10
+		buttonContainer = new HBox(10); // 水平间距为10
 		buttonContainer.setPadding(new Insets(10));
+
+		if (user.getLevel() < 1) {
+			user.updateLevel(1);
+		}
 
 		// 创建并配置五个按钮
 		for (int i = 0; i < 5; i++) {
 			final int levelIndex = i + 1; // 关卡索引从1开始
 			Button button = new Button("Level " + levelIndex);
-			button.setOnAction(event -> loadLevel(levelIndex - 1)); // 索引从0开始
+			button.setOnAction(event -> loadLevel(levelIndex));
 			buttonContainer.getChildren().add(button);
+		}
+
+		if (user.getLevel() < 5) {
+			for (int i = user.getLevel(); i < 5; i++) {
+				buttonContainer.getChildren().get(i).setDisable(true);
+			}
 		}
 
 		// 功能按钮放右边
@@ -86,9 +100,12 @@ public class SokobanGame extends Application {
 		functionContainer.getChildren().add(restartContainer); // 将重启按钮添加到按钮容器
 
 		// 添加“AI求解”按钮
-		Button solveButton = new Button("AI Solve");
+		solveButton = new Button("AI Solve");
 		solveButton.setOnAction(event -> aiSolve(primaryStage));
 		buttonContainer.getChildren().add(solveButton); // 将AI求解按钮添加到按钮容器
+		if (user.getLevel() < 5)
+			solveButton.setDisable(true);
+
 		// 添加重做按钮
 		Button redoButton = new Button("Redo");
 		redoButton.setOnAction(event -> {
@@ -172,7 +189,10 @@ public class SokobanGame extends Application {
 
 		// 默认加载第一关
 		if (!mapSet) {
-			loadLevel(0);
+			if (user.getLevel() < 1) {
+				user.updateLevel(1);
+			}
+			loadLevel(user.getLevel());
 		} else {
 			loadLevel(map);
 		}
@@ -189,6 +209,28 @@ public class SokobanGame extends Application {
 		primaryStage.setTitle("Sokoban Game");
 		primaryStage.setScene(scene);
 		primaryStage.show();
+		// Set up a listener for afterVictory changes
+		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> {
+			if (afterVictory == 1) {
+				restartLevel();
+				afterVictory = 0;
+			} else if (afterVictory == 2) {
+				currentLevelIndex++;
+				loadLevel(currentLevelIndex + 1);
+				afterVictory = 0;
+				restartLevel();
+			}
+		}));
+		timeline.setCycleCount(Timeline.INDEFINITE);
+		timeline.play();
+	}
+
+	public void setLevel(int level) {
+		this.currentLevelIndex = level;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
 	}
 
 	public static void main(String[] args) {
@@ -207,7 +249,18 @@ public class SokobanGame extends Application {
 	private void loadLevel(int levelIndex) {
 		stopAI();
 		this.currentLevelIndex = levelIndex; // 更新当前关卡索引
-		map = level.createLevel(levelIndex);
+
+		level.clearGraph();
+
+		try {
+			Thread.sleep(50);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		level.loadLevel(levelIndex);
+
+		map = level.getMap();
 		hasStartedMoving = false; // 当加载新关卡时重置移动状态
 		stopTimer(); // 确保停止任何正在运行的计时器
 		resetStepCount();
@@ -239,8 +292,9 @@ public class SokobanGame extends Application {
 
 	private void restartLevel() {
 		stopTimer(); // 确保停止任何正在运行的计时器
-		int currentLevelIndex = getCurrentLevelIndex(); // 获取当前关卡索引
-		loadLevel(currentLevelIndex); // 重新加载当前关卡
+		hasStartedMoving = false; // 当加载新关卡时重置移动状态
+		map.restoreMap();
+		level.restartLevel();
 		resetTimer(); // 重置并启动计时器
 		hasStartedMoving = false; // 重置移动状态
 		resetStepCount();
@@ -278,17 +332,13 @@ public class SokobanGame extends Application {
 
 	private void saveButton(Button button) {
 		try {
-			// 1. 创建加载器
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/SaveView.fxml"));
 
-			// 2. 加载FXML
 			Parent root = loader.load();
 
-			// 3. 获取控制器并设置数据
 			SaveController controller = loader.getController();
 			controller.setMap(map);
 
-			// 4. 创建并显示窗口
 			Stage stage = new Stage();
 			stage.setTitle("保存游戏");
 			stage.initModality(Modality.APPLICATION_MODAL); // 设置为模态窗口
@@ -301,6 +351,15 @@ public class SokobanGame extends Application {
 	}
 
 	private void showVictoryDialog(Stage ownerstage) {
+		user.updateLevel(currentLevelIndex + 1);
+
+		for (int i = 0; i < user.getLevel(); i++) {
+			buttonContainer.getChildren().get(i).setDisable(false);
+		}
+
+		if (user.getLevel() >= 5)
+			solveButton.setDisable(false);
+
 		// 创建新的Stage作为对话框
 		Stage dialogStage = new Stage();
 		dialogStage.initModality(Modality.WINDOW_MODAL);
@@ -319,7 +378,7 @@ public class SokobanGame extends Application {
 		Button restartButton = new Button("Restart Level");
 		restartButton.setPrefSize(100, 30);
 		restartButton.setOnAction(event -> {
-			restartLevel();
+			dialogStage.setUserData(1);
 			dialogStage.close(); // 关闭对话框
 		});
 
@@ -328,7 +387,7 @@ public class SokobanGame extends Application {
 		nextLevelButton.setPrefSize(80, 30);
 		if (currentLevelIndex < 4) { // 假设有5个关卡
 			nextLevelButton.setOnAction(event -> {
-				loadLevel(currentLevelIndex + 1);
+				dialogStage.setUserData(2);
 				dialogStage.close(); // 关闭对话框
 			});
 		} else {
@@ -344,6 +403,8 @@ public class SokobanGame extends Application {
 
 		// 显示对话框
 		dialogStage.showAndWait();
+
+		afterVictory = (int) dialogStage.getUserData();
 	}
 
 	private void aiSolve(Stage primaryStage) {
@@ -443,11 +504,6 @@ public class SokobanGame extends Application {
 			System.out.println("Level ended");
 			stopTimer();
 			hasStartedMoving = false; // 防止计时器再次启动直到玩家再次开始移动
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 			showVictoryDialog(primaryStage);
 		}
 	}

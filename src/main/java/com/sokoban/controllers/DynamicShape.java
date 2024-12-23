@@ -40,6 +40,24 @@ public class DynamicShape extends StaticShape {
 		timeline.play();
     }
 
+	public void directMove(double deltaX, double deltaY) {
+        int newPixelX = this.x + (int) deltaX * 50;
+		int newPixelY = this.y + (int) deltaY * 50;
+		this.x = newPixelX;
+		this.y = newPixelY;
+
+		level.stepnum++;
+
+		// 创建动画
+		Timeline timeline = new Timeline(
+				new KeyFrame(Duration.seconds(0.04), // 缩短动画时间使移动更流畅
+						new KeyValue(imageView.layoutXProperty(), newPixelX),
+						new KeyValue(imageView.layoutYProperty(), newPixelY)
+				)
+		);
+		timeline.play();
+    }
+
 	public void moveUp() {
         animatedMove(0, -50);
     }

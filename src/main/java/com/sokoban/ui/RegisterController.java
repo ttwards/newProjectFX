@@ -55,7 +55,12 @@ public class RegisterController {
         String[] parts = response.split("\\|");
 
         if ("SUCCESS".equals(parts[0])) {
-            return true;
+			out.println("UPDATE|" + username + "|level|" + 0);
+            String updateResponse = in.readLine();
+            System.out.println(updateResponse.equals("UPDATE_SUCCESS") ? "更新成功！" : "更新失败！");
+            User user = new User(username, password);
+			user.updateLevel(1);
+			return true;
         } else {
             System.out.println("注册失败：" + parts[1]);
 			return false;

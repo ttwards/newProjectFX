@@ -20,6 +20,7 @@ public class Box extends DynamicShape {
     }
 
     public void destroy() {
+		imageView.setImage(null);
         this.imageView = null;
     }
 }

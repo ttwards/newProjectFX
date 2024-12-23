@@ -45,17 +45,29 @@ public class Backend {
 
 	private static Player player;
 
+	private Level level;
+
+	private Pane container;
+
 	private static final String SAVE_DIR = System.getProperty("user.home") + File.separator + ".sokoban"
 			+ File.separator + "maps";
 
 	public Backend(int x, int y, Level level, Pane container) {
 		mapX = x;
 		mapY = y;
-		generateMap(level, container);
+		this.level = level;
+		this.container = container;
+		generateMap();
 	}
 
 	public Backend(String mapName) {
 		loadMap(mapName);
+	}
+
+	public Backend(int[][] levelArray) {
+		mapX = levelArray.length;
+		mapY = levelArray[0].length;
+		proceedSaveData(levelArray, levelArray);
 	}
 
 	public int[][] getLevelArray() {
@@ -115,6 +127,8 @@ public class Backend {
 			mapData.put("dynamicMap", dynamicMapCopy);
 			mapData.put("mapX", Integer.valueOf(mapX));
 			mapData.put("mapY", Integer.valueOf(mapY));
+			mapData.put("moveHistory", moveHistory.toArray(new double[moveHistory.size()][]));
+			mapData.put("moveSteps", moveSteps.toArray(new Integer[moveSteps.size()]));
 
 			validateMapData(mapData);
 
@@ -181,6 +195,23 @@ public class Backend {
 			int[][] dynamicMap = (int[][]) mapData.get("dynamicMap");
 			int[][] staticMap = (int[][]) mapData.get("staticMap");
 
+			// Restore move history
+			double[][] moveHistoryArray = (double[][]) mapData.get("moveHistory");
+			Integer[] moveStepsArray = (Integer[]) mapData.get("moveSteps");
+
+			moveHistory.clear();
+			moveSteps.clear();
+
+			for (double[] move : moveHistoryArray) {
+				moveHistory.push(move);
+			}
+			for (Integer step : moveStepsArray) {
+				moveSteps.push(step);
+			}
+
+			mapX = (int) mapData.get("mapX");
+			mapY = (int) mapData.get("mapY");
+
 			proceedSaveData(dynamicMap, staticMap);
 
 			System.out.println("Loading static map:");
@@ -188,9 +219,6 @@ public class Backend {
 
 			System.out.println("Loading dynamic map:");
 			printArray(dynamicMap);
-
-			mapX = (int) mapData.get("mapX");
-			mapY = (int) mapData.get("mapY");
 
 			System.out.println("Map size: " + mapX + "x" + mapY);
 			// 打印读取到的地图
@@ -210,20 +238,28 @@ public class Backend {
 		}
 	}
 
+	public void restoreMap() {
+		proceedSaveData(levelArray, levelArray);
+		cleanShape();
+		loadLevel();
+	}
+
 	// 检查地图是否存在
 	public boolean mapExists(String mapName) {
 		return Files.exists(Paths.get(SAVE_DIR, mapName + ".map"));
 	}
 
 	public void reMakeImage(Level level, Pane container) {
-		loadLevel(level, container);
+		this.level = level;
+		this.container = container;
+		loadLevel();
 	}
 
-	public static StaticShape[][] getLevel() {
+	public StaticShape[][] getLevel() {
 		return levelShape;
 	}
 
-	public static StaticShape getAt(double x, double y) {
+	public StaticShape getAt(double x, double y) {
 		return levelShape[(int) x][(int) y];
 	}
 
@@ -240,7 +276,7 @@ public class Backend {
 		}
 	}
 
-	public void generateMap(Level level, Pane container) {
+	public void generateMap() {
 		MapGenerator mapGenerator = new MapGenerator();
 		mapGenerator.mapMake();
 		// 深拷贝数组
@@ -254,19 +290,13 @@ public class Backend {
 			levelArrayDynamic[i] = Arrays.copyOf(originalMap[i], mapY);
 		}
 		cleanShape();
-		loadLevel(level, container);
+		loadLevel();
 	}
 
-	public void reloadLevel(Level level, Pane container) {
-		cleanShape();
-		loadLevel(level, container);
-	}
-
-	public void loadLevel(Level level, Pane container) {
+	public void loadLevel() {
 		for (int y = 0; y < mapY; y++) {
 			for (int x = 0; x < mapX; x++) {
 				int m = levelArrayDynamic[x][y];
-				// 检查是否是直接继承StaticShape
 				switch (m) {
 					case EMPTY:
 						levelShape[x][y] = new Empty(x, y);
@@ -360,17 +390,24 @@ public class Backend {
 		return true;
 	}
 
-	private static void cleanShape() {
+	public void cleanShape() {
 		for (DynamicShape shape : dynamicShapes) {
 			if (shape.getClass() == Box.class) {
 				Box box = (Box) shape;
 				box.destroy();
+			} else {
+				Player player = (Player) shape;
+				player.destroy();
 			}
 		}
 		dynamicShapes.clear();
 		for (DynamicShape[] row : levelDynamicShapes) {
 			Arrays.fill(row, null);
 		}
+		for(StaticShape[] row : levelShape) {
+			Arrays.fill(row, null);
+		}
+		player = null;
 	}
 
 	public boolean playerMove(double deltaX, double deltaY) {
@@ -409,7 +446,8 @@ public class Backend {
 		levelArrayMove((int) originX, (int) originY, (int) deltaX, (int) deltaY);
 		if (levelDynamicShapes[(int) originX][(int) originY] != null) {
 			DynamicShape shape = levelDynamicShapes[(int) originX][(int) originY];
-			shape.moveXY(deltaX, deltaY);
+			if(record)	{shape.moveXY(deltaX, deltaY);}
+			else 		{shape.directMove(deltaX, deltaY);}
 			System.out.println("Moving shape at: " + originX + ", " + originY + " by: " + deltaX + ", " + deltaY);
 			levelDynamicShapes[(int) newX][(int) newY] = levelDynamicShapes[(int) originX][(int) originY];
 			levelDynamicShapes[(int) originX][(int) originY] = null;

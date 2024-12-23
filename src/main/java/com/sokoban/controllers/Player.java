@@ -20,4 +20,9 @@ public class Player extends DynamicShape {
         this.level = level;
         this.container = container;
     }
+
+	public void destroy() {
+		imageView.setImage(null);
+        this.imageView = null;
+    }
 }
